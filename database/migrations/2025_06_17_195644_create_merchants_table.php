@@ -18,7 +18,9 @@ return new class extends Migration {
             $table->string('phone');
             $table->string('country');
             $table->string('city');
-            $table->string('address');
+            $table->string('address')->nullable();
+            $table->string('business_license')->nullable();
+            $table->string('business_type')->nullable();
             $table->enum('status', ['Active', 'Inactive']);
             $table->timestamps();
         });
