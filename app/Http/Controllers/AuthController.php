@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateUserRequest;
 use App\Models\Merchant;
 use App\Models\User;
+use CreateUsersTable;
+use Hash;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -45,6 +48,27 @@ class AuthController extends Controller
 
 
 
+    public function CreateUser(CreateUserRequest $request)
+    {
 
+        $data = $request->validated();
+        $data['password'] = hash::make($data['password']);
+        $data['status'] = $this->GetStatus($data['user_type']);
+
+        return User::create($data);
+    }
+
+
+
+
+    private function GetStatus($user_type)
+    {
+        return match ($user_type) {
+            'merchant' => 'inactive',
+            'driver' => 'inactive',
+            'customer' => 'active',
+            default => 'active'
+        };
+    }
 }
 
