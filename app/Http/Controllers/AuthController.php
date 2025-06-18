@@ -48,7 +48,7 @@ class AuthController extends Controller
 
 
 
-    public function CreateUser(CreateUserRequest $request)
+    private function CreateUser(CreateUserRequest $request)
     {
 
         $data = $request->validated();
@@ -57,9 +57,6 @@ class AuthController extends Controller
 
         return User::create($data);
     }
-
-
-
 
     private function GetStatus($user_type)
     {
@@ -70,5 +67,36 @@ class AuthController extends Controller
             default => 'active'
         };
     }
+
+    private function CreateProfile(Request $request, User $user)
+    { {
+            return match ($request->user_type) {
+                'driver' => $this->CreateDriverProfile($user, $request),
+                'merchant' => $this->CreateMerchantProfile($user, $request),
+                'customer' => $this->CreateCustomerProfile($user, $request),
+                default => null,
+            };
+        }
+    }
+
+
+    private function CreateMerchantProfile(User $user, Request $request)
+    {
+
+        return Merchant::create([
+            'user_id' => $user->id,
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'city' => $request->city,
+            'country' => $request->country,
+            'business_type' => $request->business_type,
+            'business_license' => $request->business_license,
+        ]);
+    }
+
+
 }
+
 
