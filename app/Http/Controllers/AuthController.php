@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateUserRequest;
-use App\Models\Merchant;
-use App\Models\User;
-use CreateUsersTable;
-use Hash;
-use Illuminate\Http\JsonResponse;
+use App\Http\Requests\RegisterRequest;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
+use App\Models\Merchant;
 
+
+//! review all code
 class AuthController extends Controller
 {
     public function RegisterMerchant(Request $request)
@@ -48,18 +51,54 @@ class AuthController extends Controller
     }
 
 
-
-    private function CreateUser(CreateUserRequest $request)
+    public function Register(RegisterRequest $request)
     {
-
         $data = $request->validated();
-        $data['password'] = hash::make($data['password']);
+        DB::beginTransaction();
+
+        try {
+            $user = $this->createUser($data);
+            $profile = $this->createProfile($request, $user);
+
+            DB::commit();
+
+            // Generate access token (for API auth)
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return $this->successResponse(
+                'Registration successful',
+                [
+                    'user' => $user->load($this->getRelationship($data['user_type'])),
+                    'profile' => $profile,
+                    'token' => $token,
+                ],
+                201 // HTTP_CREATED
+            );
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            \Log::error('Registration failed: ' . $e->getMessage());
+
+            return $this->errorResponse(
+                'Registration failed',
+                config('app.debug') ? $e->getMessage() : 'An error occurred during registration',
+                500
+            );
+        }
+    }
+
+
+
+    private function createUser(array $data)
+    {
+        $data['password'] = Hash::make($data['password']);
         $data['status'] = $this->GetStatus($data['user_type']);
 
         return User::create($data);
     }
 
-    private function GetStatus($user_type)
+    private function getStatus($user_type)
     {
         return match ($user_type) {
             'merchant' => 'inactive',
@@ -69,18 +108,18 @@ class AuthController extends Controller
         };
     }
 
-    private function CreateProfile(Request $request, User $user)
-    { {
-            return match ($request->user_type) {
-                'driver' => $this->CreateDriverProfile($user, $request),
-                'merchant' => $this->CreateMerchantProfile($user, $request),
-                'customer' => $this->CreateCustomerProfile($user, $request),
-                default => null,
-            };
-        }
+    private function createProfile(RegisterRequest $request, User $user)
+    {
+        return match ($request->user_type) {
+            'driver' => $this->CreateDriverProfile($user, $request),
+            'merchant' => $this->CreateMerchantProfile($user, $request),
+            'customer' => $this->CreateCustomerProfile($user, $request),
+            default => null,
+        };
     }
 
-    private function createDriverProfile(User $user, Request $request)
+
+    private function createDriverProfile(User $user, RegisterRequest $request)
     {
         // return Driver::create([
         //     'user_id' => $user->id,
@@ -94,7 +133,7 @@ class AuthController extends Controller
         return null;
     }
 
-    private function GetRelationship($userType)
+    private function getRelationship($userType)
     {
         return match ($userType) {
             'driver' => 'driver',
@@ -105,13 +144,13 @@ class AuthController extends Controller
     }
 
 
-    private function createCustomerProfile(User $user, Request $request)
+    private function createCustomerProfile(User $user, RegisterRequest $request)
     {
         return null;
     }
 
 
-    private function CreateMerchantProfile(User $user, Request $request)
+    private function createMerchantProfile(User $user, RegisterRequest $request)
     {
 
         return Merchant::create([
@@ -127,7 +166,7 @@ class AuthController extends Controller
         ]);
     }
 
-    private function SuccessResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
         $response = [
             'success' => true,
@@ -143,7 +182,7 @@ class AuthController extends Controller
 
     }
 
-    private function ErorrResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
         $response = [
             'success' => false,
