@@ -7,6 +7,7 @@ use App\Models\Merchant;
 use App\Models\User;
 use CreateUsersTable;
 use Hash;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -14,35 +15,35 @@ class AuthController extends Controller
     public function RegisterMerchant(Request $request)
     {
 
-        $request->validate([
-            'name' => 'required|string|max:225',
-            'email' => 'required|string|email',
-            'phone' => 'required|string',
-            'address' => 'required|string',
-            'city' => 'required|string',
-            'country' => 'required|string',
-            'status' => 'required|in:Active,Inactive',
-            'password' => 'required|string|min:7'
-        ]);
+        // $request->validate([
+        //     'name' => 'required|string|max:225',
+        //     'email' => 'required|string|email',
+        //     'phone' => 'required|string',
+        //     'address' => 'required|string',
+        //     'city' => 'required|string',
+        //     'country' => 'required|string',
+        //     'status' => 'required|in:Active,Inactive',
+        //     'password' => 'required|string|min:7'
+        // ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-            'role' => 'merchant',
-        ]);
+        // $user = User::create([
+        //     'name' => $request->name,
+        //     'email' => $request->email,
+        //     'password' => bcrypt($request->password),
+        //     'role' => 'merchant',
+        // ]);
 
-        $user->merchants()->create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'city' => $request->city,
-            'address' => $request->address,
-            'country' => $request->country,
-            'status' => $request->status,
+        // $user->merchants()->create([
+        //     'name' => $request->name,
+        //     'email' => $request->email,
+        //     'phone' => $request->phone,
+        //     'city' => $request->city,
+        //     'address' => $request->address,
+        //     'country' => $request->country,
+        //     'status' => $request->status,
 
-        ]);
-        return response()->json($user);
+        // ]);
+        // return response()->json($user);
 
     }
 
@@ -79,6 +80,36 @@ class AuthController extends Controller
         }
     }
 
+    private function createDriverProfile(User $user, Request $request)
+    {
+        // return Driver::create([
+        //     'user_id' => $user->id,
+        //     'license_number' => $request->license_number,
+        //     'vehicle_type' => $request->vehicle_type,
+        //     'vehicle_number' => $request->vehicle_number,
+        //     'vehicle_color' => $request->vehicle_color,
+        //     'vehicle_model' => $request->vehicle_model,
+        //     'availability_status' => 'offline',
+        // ]);
+        return null;
+    }
+
+    private function GetRelationship($userType)
+    {
+        return match ($userType) {
+            'driver' => 'driver',
+            'merchant' => 'merchant',
+            'customer' => 'customer',
+            default => null
+        };
+    }
+
+
+    private function createCustomerProfile(User $user, Request $request)
+    {
+        return null;
+    }
+
 
     private function CreateMerchantProfile(User $user, Request $request)
     {
@@ -96,6 +127,36 @@ class AuthController extends Controller
         ]);
     }
 
+    private function SuccessResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    {
+        $response = [
+            'success' => true,
+            'message' => $message,
+            'status' => $status
+        ];
+
+        if (!is_null($data)) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $status);
+
+    }
+
+    private function ErorrResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    {
+        $response = [
+            'success' => false,
+            'message' => $message,
+            'status' => $status
+        ];
+
+        if (!is_null($data)) {
+            $response['data'] = $data;
+        }
+
+        return response()->json($response, $status);
+    }
 
 }
 
