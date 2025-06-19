@@ -20,20 +20,22 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-
+    protected $fillable = ['name', 'email', 'password', 'user_type',];
 
     public function merchant(): hasOne
     {
         return $this->hasOne(Merchant::class);
     }
 
+    public function driver()
+    {
+        return $this->hasOne(Driver::class);
+    }
 
+    public function customer()
+    {
+        return $this->hasOne(Customer::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

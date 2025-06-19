@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -62,17 +63,16 @@ class AuthController extends Controller
 
             DB::commit();
 
-            // Generate access token (for API auth)
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return $this->successResponse(
                 'Registration successful',
                 [
-                    'user' => $user->load($this->getRelationship($data['user_type'])),
-                    'profile' => $profile,
+                    'user' => new UserResource($user->load($data['user_type'])),
                     'token' => $token,
+
                 ],
-                201 // HTTP_CREATED
+                201
             );
 
         } catch (\Exception $e) {
@@ -93,7 +93,7 @@ class AuthController extends Controller
     private function createUser(array $data)
     {
         $data['password'] = Hash::make($data['password']);
-        $data['status'] = $this->GetStatus($data['user_type']);
+        $data['status'] = $this->getStatus($data['user_type']);
 
         return User::create($data);
     }
@@ -111,9 +111,9 @@ class AuthController extends Controller
     private function createProfile(RegisterRequest $request, User $user)
     {
         return match ($request->user_type) {
-            'driver' => $this->CreateDriverProfile($user, $request),
-            'merchant' => $this->CreateMerchantProfile($user, $request),
-            'customer' => $this->CreateCustomerProfile($user, $request),
+            'driver' => $this->createDriverProfile($user, $request),
+            'merchant' => $this->createMerchantProfile($user, $request),
+            'customer' => $this->createCustomerProfile($user, $request),
             default => null,
         };
     }
@@ -133,27 +133,18 @@ class AuthController extends Controller
         return null;
     }
 
-    private function getRelationship($userType)
-    {
-        return match ($userType) {
-            'driver' => 'driver',
-            'merchant' => 'merchant',
-            'customer' => 'customer',
-            default => null
-        };
-    }
-
-
     private function createCustomerProfile(User $user, RegisterRequest $request)
     {
         return null;
     }
-
-
     private function createMerchantProfile(User $user, RegisterRequest $request)
     {
+        $licensePath = null;
+        if ($request->hasFile('business_license')) {
+            $licensePath = $request->file('business_license')->store('license', 'public');
+        }
 
-        return Merchant::create([
+        $merchant = Merchant::create([
             'user_id' => $user->id,
             'name' => $request->name,
             'email' => $request->email,
@@ -161,11 +152,13 @@ class AuthController extends Controller
             'address' => $request->address,
             'city' => $request->city,
             'country' => $request->country,
+            'business_name' => $request->business_name,
             'business_type' => $request->business_type,
-            'business_license' => $request->business_license,
+            'business_license' => $licensePath,
         ]);
-    }
 
+        return $merchant;
+    }
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
         $response = [

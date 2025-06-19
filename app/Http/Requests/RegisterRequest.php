@@ -39,7 +39,8 @@ class RegisterRequest extends FormRequest
                     'city' => 'required|string|max:100',
                     'country' => 'required|string|max:100',
                     'business_type' => 'nullable|string|max:100',
-                    'phone' => 'required|string|max:20|unique:merchants,phone',
+                    'business_license' => 'required_with:business_type|file|mimes:jpg,jpeg,png,pdf|max:2048',
+                    'business_name' => 'required|string|max:100',
                 ]);
                 break;
             case 'driver':
