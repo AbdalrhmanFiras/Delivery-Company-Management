@@ -1,8 +1,10 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\CreateUserRequest;
+use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
@@ -63,23 +65,18 @@ class AuthController extends Controller
 
             DB::commit();
 
-            $token = $user->createToken('auth_token')->plainTextToken;
+
 
             return $this->successResponse(
                 'Registration successful',
                 [
                     'user' => new UserResource($user->load($data['user_type'])),
-                    'token' => $token,
-
                 ],
                 201
             );
 
         } catch (\Exception $e) {
             DB::rollback();
-
-            \Log::error('Registration failed: ' . $e->getMessage());
-
             return $this->errorResponse(
                 'Registration failed',
                 config('app.debug') ? $e->getMessage() : 'An error occurred during registration',
@@ -88,8 +85,58 @@ class AuthController extends Controller
         }
     }
 
+    public function Login(LoginRequest $request)
+    {
+
+        $data = $request->validated();
+        try {
+            if (!$token = JWTAuth::attempt($data)) {
+                return $this->errorResponse('Invaild credentials', null, 401);
+            }
+        } catch (JWTException $e) {
+            return $this->errorResponse('token creation faild', $e->getMessage(), 500);
+        }
+
+        $user = User::where('email', $data['email'])->first();
+        $status = $this->getUserProfileStatus($user);
+
+        if ($status !== 'Active') {
+            return $this->errorResponse('Account is not active', null, 401);
+        }
+
+        return $this->successResponse(
+            'Login successful',
+            [
+                'token' => $token,
+                'user' => new UserResource($user->load($user->user_type)), // dynamically loads merchant, driver, etc.
+            ]
+        );
+    }
 
 
+    public function Logout(Request $request)
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return $this->successResponse('Logout successful');
+        } catch (JWTException $e) {
+            return $this->errorResponse('Failed to logout, please try again', $e->getMessage(), 500);
+        }
+    }
+
+    private function getUserProfileStatus(User $user)
+    {
+        switch ($user->user_type) {
+            case 'merchant':
+                return $user->merchant?->status;
+            case 'driver':
+                return $user->driver?->status;
+            case 'customer':
+                return $user->customer?->status;
+            default:
+                return null;
+        }
+    }
     private function createUser(array $data)
     {
         $data['password'] = Hash::make($data['password']);
@@ -146,8 +193,6 @@ class AuthController extends Controller
 
         $merchant = Merchant::create([
             'user_id' => $user->id,
-            'name' => $request->name,
-            'email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
             'city' => $request->city,
