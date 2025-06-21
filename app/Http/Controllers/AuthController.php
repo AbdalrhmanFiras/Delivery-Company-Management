@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Merchant;
 
-
+//? done
 //! review all code
 class AuthController extends Controller
 {
@@ -33,7 +33,7 @@ class AuthController extends Controller
         // ]);
 
         // $user = User::create([
-        //     'name' => $request->name,
+        //       'name' => $request->name,
         //     'email' => $request->email,
         //     'password' => bcrypt($request->password),
         //     'role' => 'merchant',
@@ -56,6 +56,7 @@ class AuthController extends Controller
 
     public function Register(RegisterRequest $request)
     {
+
         $data = $request->validated();
         DB::beginTransaction();
 
@@ -64,9 +65,6 @@ class AuthController extends Controller
             $profile = $this->createProfile($request, $user);
 
             DB::commit();
-
-
-
             return $this->successResponse(
                 'Registration successful',
                 [
@@ -112,8 +110,6 @@ class AuthController extends Controller
             ]
         );
     }
-
-
     public function Logout(Request $request)
     {
         try {
