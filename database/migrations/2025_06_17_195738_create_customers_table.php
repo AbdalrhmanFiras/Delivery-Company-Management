@@ -14,8 +14,8 @@ return new class extends Migration {
             $table->uuid('id')->primary(); 
             $table->string('name');
             $table->string('phone');
-            $table->string('addres');
-            $table->string('loaction')->nullable();
+            $table->string('address')->nullable();
+            $table->enum('status', ['Active', 'Inactive']);
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
 
             $table->timestamps();

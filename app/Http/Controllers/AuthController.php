@@ -7,6 +7,7 @@ use App\Http\Requests\CreateUserRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -18,42 +19,7 @@ use App\Models\Merchant;
 //! review all code
 class AuthController extends Controller
 {
-    public function RegisterMerchant(Request $request)
-    {
-
-                  // $request->validate([
-                  //     'name' => 'required|string|max:225',
-                  //     'email' => 'required|string|email',
-                  //     'phone' => 'required|string',
-                  //     'address' => 'required|string',
-                  //     'city' => 'required|string',
-                  //     'country' => 'required|string',
-                  //     'status' => 'required|in:Active,Inactive',
-                  //     'password' => 'required|string|min:7'
-                  // ]);
-
-        // $user = User::create([
-        //       'name' => $request->name,
-        //     'email' => $request->email,
-        //     'password' => bcrypt($request->password),
-        //     'role' => 'merchant',
-        // ]);
-
-        // $user->merchants()->create([
-        //     'name' => $request->name,
-        //     'email' => $request->email,
-        //     'phone' => $request->phone,
-        //     'city' => $request->city,
-        //     'address' => $request->address,
-        //     'country' => $request->country,
-        //     'status' => $request->status,
-
-        // ]);
-        // return response()->json($user);
-
-    }
-
-
+   
     public function Register(RegisterRequest $request)
     {
 
@@ -105,8 +71,8 @@ class AuthController extends Controller
         return $this->successResponse(
             'Login successful',
             [
-                'token' => $token,
-                'user' => new UserResource($user->load($user->user_type)), // dynamically loads merchant, driver, etc.
+                'user' => new UserResource($user->load($user->user_type)),
+                'token' => $token
             ]
         );
     }
@@ -178,13 +144,21 @@ class AuthController extends Controller
 
     private function createCustomerProfile(User $user, RegisterRequest $request)
     {
-        return null;
+        return Customer::create([
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'location' => $request->loaction,
+            'user_id' => $user->id,
+            'address' => $request->address,
+            'location' => $request->location
+
+        ]);
     }
     private function createMerchantProfile(User $user, RegisterRequest $request)
     {
         $licensePath = null;
         if ($request->hasFile('business_license')) {
-            $licensePath = $request->file('business_license')->store('license', 'public');
+            $licensePath = $request->file('business_license')->store('images', 'public');
         }
 
         $merchant = Merchant::create([
