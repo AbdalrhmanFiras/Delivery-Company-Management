@@ -14,11 +14,12 @@ class StoreOrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return ['id' => $this->id,
+        return [ 
+        'id' => $this->id,
         'merchant_id' => $this->merchant_id,
         'customer_id' =>$this->customer_id,
         'total_price' =>$this->total_price,
-        'create_at' => $this->created_at->format('Y-m-d')
+        'create_at' => $this->created_at->format('Y-m-d'),
     ];
     }
 }

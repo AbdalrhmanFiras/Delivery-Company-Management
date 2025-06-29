@@ -8,6 +8,7 @@ use App\Http\Resources\StoreOrderResource;
 use Illuminate\Http\JsonResponse;
 use App\Models\Merchant;
 use App\Models\Order;
+use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use PhpParser\Node\Stmt\TryCatch;
 
@@ -22,9 +23,9 @@ class OrderController extends Controller
             'merchant_id' => $data['merchant_id'],
             'customer_id' => $data['customer_id'],
             'total_price' => $data['total_price'],
-            
             ]);
 
+            
             return $this->successResponse(
                 'Order Created Successfully',[
                 'order' => new StoreOrderResource($order)

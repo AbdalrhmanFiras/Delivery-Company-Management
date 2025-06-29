@@ -10,8 +10,6 @@ enum OrderStatus:int
     case AssignedDriver = 3;
     case OutForDelivery = 4;
     case Delivered = 5;
-
-
     case Cancelled = 6;
 
 }

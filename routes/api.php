@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderItemsController;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,11 +17,8 @@ Route::post('/login', [AuthController::class, 'Login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
 
-Route::post('/order' , [OrderController::class,  'store']);
-Route::put('/order/{id}' , [OrderController::class,  'update']);
-Route::delete('/order/{id}' , [OrderController::class,  'destroy']);
-Route::get('/order/{id}' , [OrderController::class,  'show']);
-Route::get('/order/' , [OrderController::class,  'index']);
+Route::apiResource('orders', OrderController::class);
 
+Route::post('/item', [OrderItemsController::class, 'store']);
 
 
