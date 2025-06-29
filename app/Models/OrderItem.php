@@ -5,12 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Driver extends Model
+class OrderItem extends Model
 {
     use HasUuids;
-    public function users()
-    {
-        return $this->belongsTo(User::class);
-    }
-
 }

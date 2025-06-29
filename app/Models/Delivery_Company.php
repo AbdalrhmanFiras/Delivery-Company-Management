@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\LocationStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
-class Driver extends Model
+class Delivery_Company extends Model
 {
     use HasUuids;
-    public function users()
-    {
-        return $this->belongsTo(User::class);
-    }
-
+    protected $casts = [
+        'status' => LocationStatus::class
+    ];
 }

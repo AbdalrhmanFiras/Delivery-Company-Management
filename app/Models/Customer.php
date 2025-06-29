@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    use HasUuids;
+
     public function merchants()
     {
         return $this->belongsTo(Merchant::class);
