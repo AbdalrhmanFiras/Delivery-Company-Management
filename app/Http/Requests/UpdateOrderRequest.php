@@ -22,9 +22,9 @@ class UpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-             'merchant_id' => 'sometimes|uuid|exists:merchants,id',
-                'customer_id'=> 'sometimes|uuid|exists:customers,id',
-                'total_price' => 'sometimes|numeric|min:0'  
+            'merchant_id' => 'sometimes|uuid|exists:merchants,id',
+            'customer_id' => 'sometimes|uuid|exists:customers,id',
+            'total_price' => 'sometimes|numeric|min:0'
         ];
     }
 }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->tinyInteger('status')->default(0);
             $table->enum('upload', ['sent', 'not sent'])->default('not sent');
             $table->decimal('total_price', 10, 2);
+
             $table->timestamps();
         });
     }

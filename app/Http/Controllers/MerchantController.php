@@ -7,7 +7,9 @@ use App\Http\Requests\StoreOrderRequest;
 use App\Http\Resources\MerchantResource;
 use App\Http\Resources\StoreOrderResource;
 use App\Models\Order;
+use App\Jobs\SendAllNotSentOrdersJob;
 use App\Models\WarehouseReceipts;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +21,10 @@ class MerchantController extends Controller
 
     public function sendToWarehouse(AssignWarehouseRequest $request, $orderId)
     {
+        $check = WarehouseReceipts::where('order_id', $orderId)->first();
+        if ($check) {
+            return $this->successResponse('This Order Had Already Sent');
+        }
         try {
 
             DB::beginTransaction();
@@ -47,10 +53,39 @@ class MerchantController extends Controller
         }
     }
 
-
-    public function getSendOrder()
+    public function sentAllToWarehouse()
     {
-        return StoreOrderResource::collection(Order::where('upload', 'sent')->latest()->get());
+        dispatch(new SendAllNotSentOrdersJob());
+        return $this->successResponse('All Order Are Sent');
+    }
+
+
+    public function deleteNotSent($orderId)
+    {
+
+        $order = Order::where('id', $orderId)->where('status', 'not sent')->first();
+        if (!$order) {
+            return $this->errorResponse('Order does not exist or has already been sent.');
+        }
+
+        $order->delete();
+        return $this->successResponse('Order Deleted Successfuly.');
+    }
+
+
+    public function getSentOrder()
+    {
+        return StoreOrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
+    }
+
+    public function getAllOrder()
+    {
+        return StoreOrderResource::collection(Order::paginate(20)->all());
+    }
+
+    public function getnotSentOrder()
+    {
+        return StoreOrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
     }
 
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
@@ -68,7 +103,7 @@ class MerchantController extends Controller
         return response()->json($response, $status);
     }
 
-    private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    private function errorResponse(string $message, mixed $data = null, int $status = 404): JsonResponse
     {
         $response = [
             'success' => false,

@@ -22,8 +22,13 @@ Route::post('/logout', [AuthController::class, 'logout']);
 Route::apiResource('orders', OrderController::class);
 
 Route::post('/item', [OrderItemsController::class, 'store']);
-
 Route::post('/warehouse', [WarehouseController::class, 'store']);
 
-Route::post('/merchant/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);
-Route::get('/merchant/sent-order', [MerchantController::class, 'getSendOrder']);
+Route::prefix('merchant')->group(function () {
+    Route::post('/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);
+    Route::post('//send-all', [MerchantController::class, 'sentAllToWarehouse']);
+    Route::get('/sent-order', [MerchantController::class, 'getSentOrder']);
+    Route::get('/notsent-order', [MerchantController::class, 'getnotSentOrder']);
+    Route::get('/all', [MerchantController::class, 'getAllOrder']);
+    Route::delete('/{orderid}/delete', [MerchantController::class, 'deleteNotSent']);
+});
