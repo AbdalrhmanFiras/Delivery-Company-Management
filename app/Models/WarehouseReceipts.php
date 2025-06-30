@@ -10,9 +10,5 @@ class WarehouseReceipts extends Model
 {
     use HasUuids;
 
-
-    public function receivedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'received_by');
-    }
+    protected $guarded = ['id'];
 }

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('warehouse_receipts', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignUuid('received_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('received_at');
