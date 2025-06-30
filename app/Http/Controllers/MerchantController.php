@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignWarehouseRequest;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Resources\MerchantResource;
+use App\Http\Resources\StoreOrderResource;
 use App\Models\Order;
 use App\Models\WarehouseReceipts;
 use Illuminate\Http\JsonResponse;
@@ -35,7 +38,7 @@ class MerchantController extends Controller
 
             return $this->successResponse(
                 'Order pushed to warehouse successfully.',
-                ['receipt' => $orderReceipts]
+                ['receipt' => new MerchantResource($orderReceipts)]
             );
         } catch (\Exception $e) {
             DB::rollBack();
@@ -45,7 +48,10 @@ class MerchantController extends Controller
     }
 
 
-
+    public function getSendOrder()
+    {
+        return StoreOrderResource::collection(Order::where('upload', 'sent')->latest()->get());
+    }
 
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {

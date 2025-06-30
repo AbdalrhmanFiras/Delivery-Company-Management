@@ -26,3 +26,4 @@ Route::post('/item', [OrderItemsController::class, 'store']);
 Route::post('/warehouse', [WarehouseController::class, 'store']);
 
 Route::post('/merchant/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);
+Route::get('/merchant/sent-order', [MerchantController::class, 'getSendOrder']);

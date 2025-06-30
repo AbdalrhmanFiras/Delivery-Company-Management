@@ -24,6 +24,7 @@ class OrderController extends Controller
                 'merchant_id' => $data['merchant_id'],
                 'customer_id' => $data['customer_id'],
                 'total_price' => $data['total_price'],
+                'upload' => $data['upload'] ?? 'not sent'
             ]);
 
 

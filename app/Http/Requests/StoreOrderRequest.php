@@ -22,9 +22,10 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-              'merchant_id' => 'required|uuid|exists:merchants,id',
-                'customer_id'=> 'required|uuid|exists:customers,id',
-                'total_price' => 'required|numeric|min:0'  
+            'merchant_id' => 'required|uuid|exists:merchants,id',
+            'customer_id' => 'required|uuid|exists:customers,id',
+            'total_price' => 'required|numeric|min:0',
+            'upload' => 'nullable|in:sent,not sent'
         ];
     }
 }
