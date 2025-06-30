@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\CreateUserRequest;
@@ -19,7 +20,7 @@ use App\Models\Merchant;
 //! review all code
 class AuthController extends Controller
 {
-   
+
     public function Register(RegisterRequest $request)
     {
 
@@ -38,7 +39,6 @@ class AuthController extends Controller
                 ],
                 201
             );
-
         } catch (\Exception $e) {
             DB::rollback();
             return $this->errorResponse(
@@ -187,7 +187,6 @@ class AuthController extends Controller
         }
 
         return response()->json($response, $status);
-
     }
 
     private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
@@ -204,7 +203,4 @@ class AuthController extends Controller
 
         return response()->json($response, $status);
     }
-
 }
-
-

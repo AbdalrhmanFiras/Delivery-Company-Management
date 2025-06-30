@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('order_items', function (Blueprint $table) {
+        Schema::create('delivery_companies', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->string('product_name');
-            $table->integer('quantity');
-            $table->decimal('price');
+            $table->string('company_name');
+            $table->string('contact_info');
+            $table->string('status')->default('baghdad');
+            $table->string('d');
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('order_items');
+        Schema::dropIfExists('delivery_companies');
     }
 };

@@ -15,10 +15,10 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('merchant_id')->constrained('merchants')->cascadeOnDelete();
             $table->foreignUuid('customer_id')->constrained('customers')->cascadeOnDelete();
-           // $table->foreignUuid('warehouse_id')->nullable()->constrained('warehoueses')->cascadeOnDelete();
-           // $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
+            // $table->foreignUuid('warehouse_id')->nullable()->constrained('warehoueses')->cascadeOnDelete();
+            // $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
             $table->tinyInteger('status')->default(0);
-            $table->decimal('total_price' , 10,2);
+            $table->decimal('total_price', 10, 2);
             $table->timestamps();
         });
     }

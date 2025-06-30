@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Merchant extends Model
 {
-use HasUuids;
+    use HasUuids;
     protected $guarded = ['id'];
 
     public function customers()
@@ -22,11 +22,13 @@ use HasUuids;
         return $this->belongsTo(User::class);
     }
 
-      public function order(): HasMany
+    public function order(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
-
-
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 }

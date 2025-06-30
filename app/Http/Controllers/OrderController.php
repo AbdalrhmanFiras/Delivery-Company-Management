@@ -92,7 +92,7 @@ public function destroy($id)
         return new StoreOrderResource(Order::findorfail($id));
     }
 
-    public function index( Request $request){
+    public function index(){
         return StoreOrderResource::collection(Order::latest()->get());
     }
 

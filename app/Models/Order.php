@@ -10,24 +10,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Order extends Model
 {
-        protected $guarded = ['id'];
-    use HasFactory , HasUuids;
+    protected $guarded = ['id'];
+    use HasFactory, HasUuids;
 
     protected $casts = [
-    'status' => OrderStatus::class,
+        'status' => OrderStatus::class,
     ];
 
+    public function warehouse()
+    {
+        return $this->belongsTo(Warehouse::class);
+    }
 
-    public function customer() : BelongsTo 
+    public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-     public function merchant() : BelongsTo 
+
+    public function merchant(): BelongsTo
     {
         return $this->belongsTo(Merchant::class);
     }
-
-
-
 }

@@ -24,8 +24,8 @@ class StoreItemRequest extends FormRequest
         return [
         'order_id' =>'required|exists:orders,id',
         'product_name' =>'required|string',
-        'quantity' =>'required|string' , 
-        'price' =>'required|string'
+        'quantity' =>'required|integer' , 
+        'price' =>'required|decimal'
         ];
     }
 }
