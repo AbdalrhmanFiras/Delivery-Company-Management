@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\WareHouseController;
 use App\Http\Controllers\OrderItemsController;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -21,4 +22,4 @@ Route::apiResource('orders', OrderController::class);
 
 Route::post('/item', [OrderItemsController::class, 'store']);
 
-
+Route::post('/warehouse', [WarehouseController::class, 'store']);

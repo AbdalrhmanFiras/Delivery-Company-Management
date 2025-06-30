@@ -10,6 +10,8 @@ class Warehouse extends Model
 {
     use HasUuids;
 
+    protected $guarded = ['id'];
+
     public function merchant(): HasMany
     {
         return $this->hasMany(Merchant::class);

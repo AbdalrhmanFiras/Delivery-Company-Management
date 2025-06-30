@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('warehouse_receipts', function (Blueprint $table) {
             $table->uuid('id');
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
-            $table->uuid('received_by');
+            $table->foreignUuid('received_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('received_at');
             $table->timestamps();
         });

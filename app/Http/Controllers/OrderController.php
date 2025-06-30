@@ -14,94 +14,100 @@ use PhpParser\Node\Stmt\TryCatch;
 
 class OrderController extends Controller
 {
-    public function store(StoreOrderRequest $request){
+    public function store(StoreOrderRequest $request)
+    {
 
-           $data =  $request->validated();
-   
-   try{
+        $data =  $request->validated();
+
+        try {
             $order = Order::create([
-            'merchant_id' => $data['merchant_id'],
-            'customer_id' => $data['customer_id'],
-            'total_price' => $data['total_price'],
+                'merchant_id' => $data['merchant_id'],
+                'customer_id' => $data['customer_id'],
+                'total_price' => $data['total_price'],
             ]);
 
-            
+
             return $this->successResponse(
-                'Order Created Successfully',[
-                'order' => new StoreOrderResource($order)
-            ]);   
-
-        }catch(\Exception $e) {
-        return $this->errorResponse(
-             'Unexpected error.',[
-            'error' => $e->getMessage()
-        ], 500);
+                'Order Created Successfully',
+                [
+                    'order' => new StoreOrderResource($order)
+                ]
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Unexpected error.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
         }
-
     }
 
 
-public function update(UpdateOrderRequest $request, $id)
-{
-    $data = $request->validated();
+    public function update(UpdateOrderRequest $request, $id)
+    {
+        $data = $request->validated();
 
-    try {
-        $order = Order::findOrFail($id);
+        try {
+            $order = Order::findOrFail($id);
 
-        $order->update($data);
+            $order->update($data);
 
-        return $this->successResponse(
-            'Order Updated Successfully',
-            [
-                'order' => new StoreOrderResource($order)
-            ]
-        );
-    } catch (\Exception $e) {
-        return $this->errorResponse(
-            'Unexpected error.',
-            [
-                'error' => $e->getMessage()
-            ],
-            500
-        );
+            return $this->successResponse(
+                'Order Updated Successfully',
+                [
+                    'order' => new StoreOrderResource($order)
+                ]
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Unexpected error.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
     }
-}
 
-public function destroy($id)
-{
-    try {
-        $order = Order::findOrFail($id);
+    public function destroy($id)
+    {
+        try {
+            $order = Order::findOrFail($id);
 
-        $order->delete();
+            $order->delete();
 
-        return $this->successResponse(
-            'Order Deleted Successfully'
-        );
-    } catch (\Exception $e) {
-        return $this->errorResponse(
-            'Unexpected error.',
-            [
-                'error' => $e->getMessage()
-            ],
-            500
-        );
+            return $this->successResponse(
+                'Order Deleted Successfully'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Unexpected error.',
+                [
+                    'error' => $e->getMessage()
+                ],
+                500
+            );
+        }
     }
-}
 
-    public function show($id){
+    public function show($id)
+    {
         return new StoreOrderResource(Order::findorfail($id));
     }
 
-    public function index(){
+    public function index()
+    {
         return StoreOrderResource::collection(Order::latest()->get());
     }
 
-     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
         $response = [
             'success' => true,
             'message' => $message,
-            
+
         ];
 
         if (!is_null($data)) {
@@ -109,7 +115,6 @@ public function destroy($id)
         }
 
         return response()->json($response, $status);
-
     }
 
     private function errorResponse(string $message, mixed $data = null, int $status = 401): JsonResponse
@@ -123,7 +128,4 @@ public function destroy($id)
         }
         return response()->json($response, $status);
     }
-
-
-    
 }
