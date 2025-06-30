@@ -6,13 +6,14 @@ use App\Http\Requests\AssignWarehouseRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Resources\MerchantResource;
 use App\Http\Resources\StoreOrderResource;
-use App\Models\Order;
 use App\Jobs\SendAllNotSentOrdersJob;
+use App\Models\Order;
 use App\Models\WarehouseReceipts;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 
 class MerchantController extends Controller
@@ -21,6 +22,8 @@ class MerchantController extends Controller
 
     public function sendToWarehouse(AssignWarehouseRequest $request, $orderId)
     {
+        Log::info("Attempting to send order #{$orderId} to warehouse.");
+
         $check = WarehouseReceipts::where('order_id', $orderId)->first();
         if ($check) {
             return $this->successResponse('This Order Had Already Sent');
@@ -29,6 +32,8 @@ class MerchantController extends Controller
 
             DB::beginTransaction();
             $data =  $request->validated();
+            Log::info("Order #{$orderId} validated data.", $data);
+
             $order = Order::findOrFail($orderId);
 
             $order->status = 1;
@@ -41,6 +46,8 @@ class MerchantController extends Controller
                 'received_at' => now()
             ]);
             DB::commit();
+            Log::info("Warehouse receipt created for order #{$orderId}.");
+
 
             return $this->successResponse(
                 'Order pushed to warehouse successfully.',
@@ -55,6 +62,7 @@ class MerchantController extends Controller
 
     public function sentAllToWarehouse()
     {
+        Log::info("Dispatching SendAllNotSentOrdersJob to process all not sent orders.");
         dispatch(new SendAllNotSentOrdersJob());
         return $this->successResponse('All Order Are Sent');
     }
@@ -62,13 +70,15 @@ class MerchantController extends Controller
 
     public function deleteNotSent($orderId)
     {
-
+        Log::info("Attempting to delete not sent order #{$orderId}.");
         $order = Order::where('id', $orderId)->where('status', 'not sent')->first();
         if (!$order) {
             return $this->errorResponse('Order does not exist or has already been sent.');
         }
 
         $order->delete();
+        Log::info("Order #{$orderId} soft deleted successfully.");
+
         return $this->successResponse('Order Deleted Successfuly.');
     }
 
