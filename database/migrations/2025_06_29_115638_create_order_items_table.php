@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_items', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->bigIncrements('id');
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('product_name');
             $table->integer('quantity');
