@@ -36,6 +36,7 @@ class SendAllNotSentOrdersJob implements ShouldQueue
 
                                 $order->upload = Order::STATUS_SENT;
                                 $order->status = 1;
+                                $order->warehouse_id = $order->merchant->warehouse_id;
                                 $order->save();
 
                                 WarehouseReceipts::create([

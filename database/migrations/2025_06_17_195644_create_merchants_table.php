@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->string('business_license')->nullable();
             $table->string('business_type')->nullable();
             $table->enum('status', ['Active', 'Inactive']);
+            $table->uuid('warehouse_id')->nullable();
             $table->timestamps();
         });
     }

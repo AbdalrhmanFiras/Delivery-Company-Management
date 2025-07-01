@@ -20,7 +20,7 @@ class MerchantController extends Controller
 {
 
 
-    public function sendToWarehouse(AssignWarehouseRequest $request, $orderId)
+    public function sendToWarehouse(Request $request, $orderId)
     {
         Log::info("Attempting to send order #{$orderId} to warehouse.");
 
@@ -31,14 +31,11 @@ class MerchantController extends Controller
         try {
 
             DB::beginTransaction();
-            $data =  $request->validated();
-            Log::info("Order #{$orderId} validated data.", $data);
-
+            Log::info("Order #{$orderId} validated data.");
             $order = Order::findOrFail($orderId);
-
             $order->status = 1;
             $order->upload = 'sent';
-            $order->warehouse_id = $data['warehouse_id'];
+            $order->warehouse_id = $order->merchant->warehouse_id;
             $order->save();
             $orderReceipts = WarehouseReceipts::create([
                 'order_id' => $order->id,
@@ -61,11 +58,13 @@ class MerchantController extends Controller
     }
 
     public function sentAllToWarehouse()
-    {
+    { // php artisan queue:work
         Log::info("Dispatching SendAllNotSentOrdersJob to process all not sent orders.");
         dispatch(new SendAllNotSentOrdersJob());
         return $this->successResponse('All Order Are Sent');
     }
+
+
 
 
     public function deleteNotSent($orderId)
@@ -83,20 +82,6 @@ class MerchantController extends Controller
     }
 
 
-    public function getSentOrder()
-    {
-        return StoreOrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
-    }
-
-    public function getAllOrder()
-    {
-        return StoreOrderResource::collection(Order::paginate(20)->all());
-    }
-
-    public function getnotSentOrder()
-    {
-        return StoreOrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
-    }
 
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {

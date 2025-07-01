@@ -93,6 +93,25 @@ class OrderController extends Controller
         }
     }
 
+
+    public function getSentOrder()
+    {
+        return StoreOrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
+    }
+
+    public function getAllOrder()
+    {
+        return StoreOrderResource::collection(Order::paginate(20)->all());
+    }
+
+    public function getnotSentOrder()
+    {
+        return StoreOrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
+    }
+
+
+
+
     public function show($id)
     {
         return new StoreOrderResource(Order::findorfail($id));

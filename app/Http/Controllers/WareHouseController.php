@@ -20,4 +20,7 @@ class WareHouseController extends Controller
 
         return response()->json(new WarehouseResource($warehouse));
     }
+
+
+    public function AddMerchant($merchantid) {}
 }
