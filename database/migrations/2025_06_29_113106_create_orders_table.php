@@ -30,6 +30,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        Schema::table('order_logs', function (Blueprint $table) {
+            $table->dropIndex(['order_id']);
+            $table->dropIndex(['merchant_id']);
+        });
     }
 };

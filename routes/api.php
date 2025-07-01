@@ -5,6 +5,7 @@ use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\WareHouseController;
 use App\Http\Controllers\OrderItemsController;
+use App\Http\Controllers\OrderlogController;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,4 +32,5 @@ Route::prefix('merchant')->group(function () {
     Route::get('/notsent-order', [MerchantController::class, 'getnotSentOrder']);
     Route::get('/all', [MerchantController::class, 'getAllOrder']);
     Route::delete('/{orderid}/delete', [MerchantController::class, 'deleteNotSent']);
+    Route::get('/{merchant}/logs', [OrderlogController::class, 'logs']);
 });
