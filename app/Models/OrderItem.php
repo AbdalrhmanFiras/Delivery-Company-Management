@@ -9,7 +9,4 @@ class OrderItem extends Model
 {
 
     protected $guarded = ['id'];
-    use HasUuids;
-
-    
 }

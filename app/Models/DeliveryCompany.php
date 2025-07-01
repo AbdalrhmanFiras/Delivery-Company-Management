@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DeliveryCompany extends Model
 {
-    use HasUuids;
 
     protected $guarded = ['id'];
 
