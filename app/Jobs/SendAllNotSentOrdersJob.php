@@ -16,32 +16,21 @@ class SendAllNotSentOrdersJob implements ShouldQueue
 
     public function handle()
     {
-        DB::beginTransaction();
+        Order::where('upload', Order::STATUS_NOT_SENT)
+            ->chunkById(100, function ($orders) {
+                foreach ($orders as $order) {
+                    DB::transaction(function () use ($order) {
+                        $order->upload = Order::STATUS_SENT;
+                        $order->status = 1;
+                        $order->save();
 
-        try {
-            $orders = Order::where('upload', Order::STATUS_NOT_SENT)->get();
-
-            if ($orders->isEmpty()) {
-                DB::commit();
-                return;
-            }
-
-            foreach ($orders as $order) {
-                $order->upload = Order::STATUS_SENT;
-                $order->status = 1;
-                $order->save();
-
-                WarehouseReceipts::create([
-                    'order_id' => $order->id,
-                    'received_by' => $order->merchant->user_id,
-                    'received_at' => now(),
-                ]);
-            }
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
-        }
+                        WarehouseReceipts::create([
+                            'order_id' => $order->id,
+                            'received_by' => $order->merchant->user_id,
+                            'received_at' => now(),
+                        ]);
+                    });
+                }
+            });
     }
 }
