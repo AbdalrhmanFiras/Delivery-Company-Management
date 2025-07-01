@@ -20,6 +20,9 @@ Route::post('/register', [AuthController::class, 'Register']);
 Route::post('/login', [AuthController::class, 'Login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+
+
+
 Route::prefix('orders')->group(function () {
     Route::get('/notsent-order', [OrderController::class, 'getnotSentOrder']);
     Route::get('/all', [OrderController::class, 'getAllOrder']);
