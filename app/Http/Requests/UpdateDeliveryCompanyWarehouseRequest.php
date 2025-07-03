@@ -6,7 +6,7 @@ use App\Enums\Governorate;
 use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class AddDeliveryCompanyRequest extends FormRequest
+class UpdateDeliveryCompanyWarehouseRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,8 @@ class AddDeliveryCompanyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_name' => 'required|string',
-            'contact_info' => 'required|string',
+            'company_name' => 'sometimes|string',
+            'contact_info' => 'sometimes|string',
             'governorate' => [
                 'sometimes',
                 'nullable',

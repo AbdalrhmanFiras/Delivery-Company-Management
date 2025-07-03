@@ -30,11 +30,15 @@ Route::prefix('orders')->group(function () {
 });
 
 Route::apiResource('orders', OrderController::class);
-
-
 Route::post('/item', [OrderItemsController::class, 'store']);
-Route::post('/warehouse', [WarehouseController::class, 'store']);
-Route::post('/deliverycompany', [WarehouseController::class, 'addDeliveryCompany']);
+
+Route::prefix('warehouse')->group(function () {
+    Route::post('/', [WarehouseController::class, 'store']);
+    Route::post('/deliverycompany', [WarehouseController::class, 'addDeliveryCompany']);
+    Route::get('/deliverycompany', [WarehouseController::class, 'getAllDeliveryCompany']);
+    Route::put('/{Id}/deliverycompany', [WarehouseController::class, 'updateDeliveryCompany']);
+    Route::delete('/{Id}/deliverycompany', [WarehouseController::class, 'destroyDeliveryCompany']);
+});
 
 
 Route::prefix('merchant')->group(function () {
