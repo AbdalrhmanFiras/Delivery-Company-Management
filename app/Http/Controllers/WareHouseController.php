@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use App\Http\Resources\WarehouseResource;
 use App\Http\Requests\AddDeliveryCompanyRequest;
 use App\Http\Resources\DeliveryCompanyWarehouseResource;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 
 class WareHouseController extends Controller
@@ -20,6 +21,7 @@ class WareHouseController extends Controller
         // employe
         // manager
         // Admin 
+        //DeliveryCompanyLog
 
         $data = $request->validate([
             'name' => 'required|string',
@@ -64,7 +66,7 @@ class WareHouseController extends Controller
                 return $this->errorResponse('Not Found Or Already Deletd', null, 404);
             }
             $DeliveryCompany->delete();
-            return response()->json(null, 204);
+            return $this->successResponse('Delivery Company Has Been Deleted');
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
@@ -75,6 +77,20 @@ class WareHouseController extends Controller
     {
         return DeliveryCompanyWarehouseResource::collection(DeliveryCompany::all());
     }
+
+    public function getDeliveryCompany($DeliveryCompanyId)
+    {
+        try {
+            $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
+            return new DeliveryCompanyWarehouseResource($DeliveryCompany);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Delivery Company Not Found.', null, 404);
+        }
+    }
+
+
+
+
 
 
 

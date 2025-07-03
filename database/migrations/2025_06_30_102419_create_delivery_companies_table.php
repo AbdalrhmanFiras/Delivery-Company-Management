@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('delivery_companies', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->uuid('id')->primary();
             $table->string('company_name');
             $table->string('contact_info');
             $table->string('governorate')->default('baghdad');

@@ -34,10 +34,11 @@ Route::post('/item', [OrderItemsController::class, 'store']);
 
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
-    Route::post('/deliverycompany', [WarehouseController::class, 'addDeliveryCompany']);
-    Route::get('/deliverycompany', [WarehouseController::class, 'getAllDeliveryCompany']);
-    Route::put('/{Id}/deliverycompany', [WarehouseController::class, 'updateDeliveryCompany']);
-    Route::delete('/{Id}/deliverycompany', [WarehouseController::class, 'destroyDeliveryCompany']);
+    Route::post('/delivery_company', [WarehouseController::class, 'addDeliveryCompany']);
+    Route::get('/delivery_company', [WarehouseController::class, 'getAllDeliveryCompany']);
+    Route::get('/delivery_company/{delivery_company}', [WarehouseController::class, 'getDeliveryCompany']);
+    Route::put('/delivery_company/{delivery_company}/', [WarehouseController::class, 'updateDeliveryCompany']);
+    Route::delete('/delivery_company/{delivery_company}/', [WarehouseController::class, 'destroyDeliveryCompany']);
 });
 
 
