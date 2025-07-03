@@ -34,6 +34,8 @@ Route::apiResource('orders', OrderController::class);
 
 Route::post('/item', [OrderItemsController::class, 'store']);
 Route::post('/warehouse', [WarehouseController::class, 'store']);
+Route::post('/deliverycompany', [WarehouseController::class, 'addDeliveryCompany']);
+
 
 Route::prefix('merchant')->group(function () {
     Route::post('/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);

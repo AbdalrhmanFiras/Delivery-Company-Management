@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum LocationStatus:string
+enum Governorate: string
 {
     case Baghdad = 'baghdad';
     case Basra = 'basra';
@@ -21,6 +21,4 @@ enum LocationStatus:string
     case Muthanna = 'muthanna';
     case DhiQar = 'dhi qar';
     case Nineveh = 'nineveh';
-
-
 }

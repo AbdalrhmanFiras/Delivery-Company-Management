@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('merchant_id')->constrained('merchants')->cascadeOnDelete();
             $table->foreignUuid('customer_id')->constrained('customers')->cascadeOnDelete();
-            $table->foreignUuid('warehouse_id')->nullable()->constrained('warehouses')->cascadeOnDelete();
+            $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->cascadeOnDelete();
             // $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
             $table->tinyInteger('status')->default(0);
             $table->enum('upload', ['sent', 'not sent'])->default('not sent');
