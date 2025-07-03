@@ -26,4 +26,10 @@ class Warehouse extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+
+    public function warehouse(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
 }

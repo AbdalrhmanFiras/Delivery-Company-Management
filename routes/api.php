@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\WareHouseController;
@@ -41,6 +42,8 @@ Route::prefix('warehouse')->group(function () {
     Route::delete('/delivery_company/{delivery_company}/', [WarehouseController::class, 'destroyDeliveryCompany']);
 });
 
+
+Route::apiResource('employees', EmployeeController::class);
 
 Route::prefix('merchant')->group(function () {
     Route::post('/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);

@@ -61,16 +61,16 @@ class WareHouseController extends Controller
     public function destroyDeliveryCompany($DeliveryCompanyId)
     {
         try {
-            $DeliveryCompany = DeliveryCompany::find($DeliveryCompanyId);
-            if (!$DeliveryCompany) {
-                return $this->errorResponse('Not Found Or Already Deletd', null, 404);
-            }
+            $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
             $DeliveryCompany->delete();
-            return $this->successResponse('Delivery Company Has Been Deleted');
+            return $this->successResponse('Delivery Company has been deleted.');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Delivery Company not found or already deleted.', null, 404);
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
+
 
 
     public function getAllDeliveryCompany()

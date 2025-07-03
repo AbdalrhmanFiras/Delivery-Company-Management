@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('employees', function (Blueprint $table) {
-            $table->uuid()->primary();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone');
@@ -20,6 +20,7 @@ return new class extends Migration
             $table->timestamp('hire_date');
             $table->string('role')->default('employee');
             $table->string('status')->default('active');
+            $table->softDeletes();
             $table->timestamps();
         });
     }
