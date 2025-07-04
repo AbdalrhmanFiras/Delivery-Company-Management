@@ -23,7 +23,9 @@ class UpdateOrderRequest extends FormRequest
     {
         return [
             'merchant_id' => 'sometimes|uuid|exists:merchants,id',
-            'customer_id' => 'sometimes|uuid|exists:customers,id',
+            'customer_name' => 'sometimes',
+            'customer_phone' => 'sometimes',
+            'customer_address' => 'sometimes',
             'total_price' => 'sometimes|numeric|min:0'
         ];
     }

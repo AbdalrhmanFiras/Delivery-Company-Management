@@ -18,6 +18,7 @@ class EmployeeController extends Controller
         return EmpolyeeResource::collection(Employee::paginate(25));
     }
 
+
     public function show($employeeId)
     {
         try {
@@ -28,12 +29,14 @@ class EmployeeController extends Controller
         }
     }
 
+
     public function store(StoreEmployeeRequest $request)
     {
         $data = $request->validated();
         $employee = Employee::create($data);
         return $this->successResponse('Employee Added Successfully', new EmpolyeeResource($employee));
     }
+
 
     public function update(UpdateEmployeeRequest $request, $employeeId)
     {
@@ -51,6 +54,7 @@ class EmployeeController extends Controller
         }
     }
 
+
     public function destroy($employeeId)
     {
         try {
@@ -65,7 +69,6 @@ class EmployeeController extends Controller
     }
 
 
-
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
         $response = [
@@ -77,9 +80,9 @@ class EmployeeController extends Controller
         if (!is_null($data)) {
             $response['data'] = $data;
         }
-
         return response()->json($response, $status);
     }
+
 
     private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
@@ -92,7 +95,6 @@ class EmployeeController extends Controller
         if (!is_null($data)) {
             $response['data'] = $data;
         }
-
         return response()->json($response, $status);
     }
 }

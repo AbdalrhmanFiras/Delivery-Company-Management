@@ -21,6 +21,8 @@ Route::post('/register', [AuthController::class, 'Register']);
 Route::post('/login', [AuthController::class, 'Login']);
 Route::post('/logout', [AuthController::class, 'logout']);
 
+//?------------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -30,20 +32,27 @@ Route::prefix('orders')->group(function () {
     Route::get('/sent-order', [OrderController::class, 'getSentOrder']);
 });
 
-Route::apiResource('orders', OrderController::class);
+//?------------------------------------------------------------------------------------------------------------
 Route::post('/item', [OrderItemsController::class, 'store']);
+Route::apiResources([
+    'orders' => OrderController::class,
+    'employees' => EmployeeController::class
+]);
+
+//?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
-    Route::post('/delivery_company', [WarehouseController::class, 'addDeliveryCompany']);
-    Route::get('/delivery_company', [WarehouseController::class, 'getAllDeliveryCompany']);
-    Route::get('/delivery_company/{delivery_company}', [WarehouseController::class, 'getDeliveryCompany']);
-    Route::put('/delivery_company/{delivery_company}/', [WarehouseController::class, 'updateDeliveryCompany']);
-    Route::delete('/delivery_company/{delivery_company}/', [WarehouseController::class, 'destroyDeliveryCompany']);
+
+    Route::prefix('delivery_company')->group(function () {
+        Route::post('/', [WarehouseController::class, 'addDeliveryCompany']);
+        Route::get('/', [WarehouseController::class, 'getAllDeliveryCompany']);
+        Route::get('/{delivery_company}', [WarehouseController::class, 'getDeliveryCompany']);
+        Route::put('/{delivery_company}', [WarehouseController::class, 'updateDeliveryCompany']);
+        Route::delete('/{delivery_company}', [WarehouseController::class, 'destroyDeliveryCompany']);
+    });
 });
-
-
-Route::apiResource('employees', EmployeeController::class);
+//?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('merchant')->group(function () {
     Route::post('/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);

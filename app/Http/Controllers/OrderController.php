@@ -16,17 +16,16 @@ class OrderController extends Controller
 {
     public function store(StoreOrderRequest $request)
     {
-
         $data =  $request->validated();
-
         try {
             $order = Order::create([
                 'merchant_id' => $data['merchant_id'],
-                'customer_id' => $data['customer_id'],
                 'total_price' => $data['total_price'],
+                'customer_name' => $data['customer_name'],
+                'customer_phone' => $data['customer_phone'],
+                'customer_address' => $data['customer_address'] ?? null,
                 'upload' => $data['upload'] ?? 'not sent'
             ]);
-
 
             return $this->successResponse(
                 'Order Created Successfully',
@@ -49,12 +48,9 @@ class OrderController extends Controller
     public function update(UpdateOrderRequest $request, $id)
     {
         $data = $request->validated();
-
         try {
             $order = Order::findOrFail($id);
-
             $order->update($data);
-
             return $this->successResponse(
                 'Order Updated Successfully',
                 [
@@ -72,13 +68,12 @@ class OrderController extends Controller
         }
     }
 
+
     public function destroy($id)
     {
         try {
             $order = Order::findOrFail($id);
-
             $order->delete();
-
             return $this->successResponse(
                 'Order Deleted Successfully'
             );
@@ -99,10 +94,12 @@ class OrderController extends Controller
         return StoreOrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
     }
 
+
     public function getAllOrder()
     {
         return StoreOrderResource::collection(Order::paginate(20)->all());
     }
+
 
     public function getnotSentOrder()
     {
@@ -110,17 +107,17 @@ class OrderController extends Controller
     }
 
 
-
-
     public function show($id)
     {
         return new StoreOrderResource(Order::findorfail($id));
     }
 
+
     public function index()
     {
         return StoreOrderResource::collection(Order::latest()->get());
     }
+
 
     private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {
@@ -133,9 +130,9 @@ class OrderController extends Controller
         if (!is_null($data)) {
             $response['data'] = $data;
         }
-
         return response()->json($response, $status);
     }
+
 
     private function errorResponse(string $message, mixed $data = null, int $status = 401): JsonResponse
     {

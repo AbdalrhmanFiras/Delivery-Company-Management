@@ -23,7 +23,9 @@ class StoreOrderRequest extends FormRequest
     {
         return [
             'merchant_id' => 'required|uuid|exists:merchants,id',
-            'customer_id' => 'required|uuid|exists:customers,id',
+            'customer_name' => 'required|string',
+            'customer_phone' => 'required|string|min:11',
+            'customer_address' => 'required|string',
             'total_price' => 'required|numeric|min:0',
             'upload' => 'nullable|in:sent,not sent'
         ];

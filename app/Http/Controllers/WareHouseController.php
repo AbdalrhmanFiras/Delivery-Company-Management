@@ -14,28 +14,25 @@ use App\Http\Resources\DeliveryCompanyWarehouseResource;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 
+// employe
+// Admin 
+//DeliveryCompanyLog
+
 class WareHouseController extends Controller
 {
     public function store(Request $request)
-    { //? i should make register and login for it 
-        // employe
-        // manager
-        // Admin 
-        //DeliveryCompanyLog
-
+    { //! Admin
         $data = $request->validate([
             'name' => 'required|string',
             'address' => 'required|string',
         ]);
-
         $warehouse = Warehouse::create($data);
-
         return response()->json(new WarehouseResource($warehouse));
     }
 
 
     public function addDeliveryCompany(AddDeliveryCompanyRequest $request)
-    {
+    { //! Admin
         $data = $request->validated();
         $DeliveryCompany = DeliveryCompany::create($data);
         return $this->successResponse('Delivery Company Added Successfully', new DeliveryCompanyWarehouseResource($DeliveryCompany));
@@ -43,7 +40,7 @@ class WareHouseController extends Controller
 
 
     public function updateDeliveryCompany(UpdateDeliveryCompanyWarehouseRequest $request, $DeliveryCompanyId)
-    {
+    { //! Admin
         $data = $request->validated();
         try {
             $DeliveryCompany = DeliveryCompany::findorFail($DeliveryCompanyId);
@@ -58,8 +55,9 @@ class WareHouseController extends Controller
         }
     }
 
+
     public function destroyDeliveryCompany($DeliveryCompanyId)
-    {
+    { //! Admin
         try {
             $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
             $DeliveryCompany->delete();
@@ -72,25 +70,21 @@ class WareHouseController extends Controller
     }
 
 
-
     public function getAllDeliveryCompany()
     {
-        return DeliveryCompanyWarehouseResource::collection(DeliveryCompany::all());
+        return DeliveryCompanyWarehouseResource::collection(DeliveryCompany::whereNotNull('warehouse_id')->get());
     }
+
 
     public function getDeliveryCompany($DeliveryCompanyId)
     {
         try {
-            $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
+            $DeliveryCompany = DeliveryCompany::where('id', $DeliveryCompanyId)->whereNotNull('warehouse_id')->firstOrFail();
             return new DeliveryCompanyWarehouseResource($DeliveryCompany);
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Delivery Company Not Found.', null, 404);
         }
     }
-
-
-
-
 
 
 
@@ -115,6 +109,7 @@ class WareHouseController extends Controller
 
         return response()->json($response, $status);
     }
+
 
     private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
     {

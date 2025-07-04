@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Warehouse extends Model
 {
-
-
     protected $guarded = ['id'];
 
     public function merchant(): HasMany

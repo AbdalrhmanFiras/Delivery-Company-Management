@@ -20,6 +20,8 @@ class DeliveryCompanyWarehouseResource extends JsonResource
             'contact_info' => $this->contact_info,
             'governorate' => $this->when(!empty($this->governorate), $this->governorate),
             'join_at' => $this->created_at,
+            'warehouse_id' => $this->when(!is_null($this->warehouse_id), $this->warehouse_id)
+
         ];
     }
 }
