@@ -11,4 +11,9 @@ class WarehouseReceipts extends Model
     use HasUuids;
 
     protected $guarded = ['id'];
+
+    public function scopeOrderId($query, $id)
+    {
+        return $query->where('order_id', $id);
+    }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\WareHouseController;
 use App\Http\Controllers\OrderItemsController;
 use App\Http\Controllers\OrderlogController;
+use App\Http\Controllers\WarehouseOrderController;
 use App\Models\OrderItem;
 use App\Models\OrderLog;
 use Illuminate\Http\Request;
@@ -43,6 +44,10 @@ Route::apiResources([
 
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
+    Route::post('orders/{orderid}/receive', [WarehouseOrderController::class, 'receiveOrder']);
+
+
+
     Route::prefix('delivery_company')->group(function () {
         Route::post('/', [WarehouseController::class, 'addDeliveryCompany']);
         Route::get('/', [WarehouseController::class, 'getAllDeliveryCompany']);

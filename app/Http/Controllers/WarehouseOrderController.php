@@ -13,40 +13,26 @@ use App\Http\Resources\WarehouseOrderResource;
 
 class WarehouseOrderController extends BaseController
 {
-
-    public function sendToWarehouse(Request $request, $orderId)
+    public function receiveOrder(Request $request, $orderId)
     {
-        Log::info("Attempting to send order #{$orderId} to warehouse.");
+        Log::info("Warehouse employee receiving order #{$orderId}.");
 
-        $check = WarehouseReceipts::where('order_id', $orderId)->first();
+        $check = WarehouseReceipts::orderId($orderId)->first();
         if ($check) {
-            return $this->successResponse('This Order Had Already Sent');
+            return $this->successResponse('This Order Had Already Accepted');
         }
         try {
-
             DB::beginTransaction();
-            Log::info("Order #{$orderId} validated data.");
-            $order = Order::findOrFail($orderId);
-            $order->status = 1;
-            $order->upload = 'sent';
-            $order->warehouse_id = $order->merchant->warehouse_id;
-            $order->save();
+            $order = Order::Id($orderId)->orderStatus(1)->firstOrFail();
             $orderReceipts = WarehouseReceipts::create([
                 'order_id' => $order->id,
                 'received_by' => $order->merchant->user_id,
                 'received_at' => now()
             ]);
             DB::commit();
-            Log::info("Warehouse receipt created for order #{$orderId}.");
-
-
-            return $this->successResponse(
-                'Order pushed to warehouse successfully.',
-                ['receipt' => new WarehouseOrderResource($orderReceipts)]
-            );
+            return $this->successResponse('Order received successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-
             return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
         }
     }
