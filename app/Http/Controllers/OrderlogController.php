@@ -4,27 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\OrderLogResource;
 use App\Models\OrderLog;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Event\ResponseEvent;
 
-
-class OrderlogController extends Controller
+class OrderlogController extends BaseController
 {
     public function logs(Request $request, $merchantId)
     {
-        $query = OrderLog::where('merchant_id', $merchantId);
-
-        if ($request->has('action')) {
-            $query->where('action', $request->input('action'));
+        try {
+            $query = OrderLog::where('merchant_id', $merchantId)->firstOrFail();
+            $logs = $query->orderByDesc('created_at')->paginate(20);
+            return OrderLogResource::collection($logs);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('There is no merchant like this', null, 404);
         }
-
-        if ($request->has('date_from')) {
-            $query->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-        if ($request->has('date_to')) {
-            $query->whereDate('created_at', '<=', $request->input('date_to'));
-        }
-
-        $logs = $query->orderByDesc('created_at')->paginate(20);
-        return OrderLogResource::collection($logs);
     }
 }

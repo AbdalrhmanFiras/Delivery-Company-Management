@@ -6,15 +6,12 @@ use App\Http\Requests\StoreItemRequest;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 
-class OrderItemsController extends Controller
+class OrderItemsController extends BaseController
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        
-    }
+    public function index() {}
 
     /**
      * Store a newly created resource in storage.
@@ -23,9 +20,9 @@ class OrderItemsController extends Controller
     {
         $data = $request->validated();
 
-    $item = OrderItem::create($data);
+        $item = OrderItem::create($data);
 
-    return $item;
+        return $item;
     }
 
     /**

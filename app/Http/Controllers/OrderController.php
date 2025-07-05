@@ -12,7 +12,7 @@ use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use PhpParser\Node\Stmt\TryCatch;
 
-class OrderController extends Controller
+class OrderController extends BaseController
 {
     public function store(StoreOrderRequest $request)
     {
@@ -116,33 +116,5 @@ class OrderController extends Controller
     public function index()
     {
         return StoreOrderResource::collection(Order::latest()->get());
-    }
-
-
-    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        $response = [
-            'success' => true,
-            'message' => $message,
-
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-        return response()->json($response, $status);
-    }
-
-
-    private function errorResponse(string $message, mixed $data = null, int $status = 401): JsonResponse
-    {
-        $response = [
-            'success' => false,
-            'message' => $message,
-        ];
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-        return response()->json($response, $status);
     }
 }

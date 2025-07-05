@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('company_name');
             $table->string('contact_info');
             $table->string('governorate')->default('baghdad');
+            $table->tinyInteger('status')->default(0);
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->cascadeOnDelete();
             $table->timestamps();
         });

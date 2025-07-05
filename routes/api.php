@@ -43,11 +43,12 @@ Route::apiResources([
 
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
-
     Route::prefix('delivery_company')->group(function () {
         Route::post('/', [WarehouseController::class, 'addDeliveryCompany']);
         Route::get('/', [WarehouseController::class, 'getAllDeliveryCompany']);
         Route::get('/{delivery_company}', [WarehouseController::class, 'getDeliveryCompany']);
+        Route::get('governorate/{governorate}', [WarehouseController::class, 'deliveryCompaniesByGovernorate']);
+        Route::get('status/{status}', [WarehouseController::class, 'deliveryCompaniesBystatus']);
         Route::put('/{delivery_company}', [WarehouseController::class, 'updateDeliveryCompany']);
         Route::delete('/{delivery_company}', [WarehouseController::class, 'destroyDeliveryCompany']);
     });
@@ -55,8 +56,8 @@ Route::prefix('warehouse')->group(function () {
 //?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('merchant')->group(function () {
-    Route::post('/{orderid}/send-order', [MerchantController::class, 'sendToWarehouse']);
+    Route::post('/send-order/{orderid}', [MerchantController::class, 'sendToWarehouse']);
     Route::post('/send-all', [MerchantController::class, 'sentAllToWarehouse']);
-    Route::delete('/{orderid}/delete', [MerchantController::class, 'deleteNotSent']);
-    Route::get('/{merchant}/logs', [OrderlogController::class, 'logs']);
+    Route::delete('delete/{orderid}', [MerchantController::class, 'deleteNotSent']);
+    Route::get('logs/{merchant}', [OrderlogController::class, 'logs']);
 });

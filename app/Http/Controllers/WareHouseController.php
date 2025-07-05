@@ -9,6 +9,7 @@ use App\Models\DeliveryCompany;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\WarehouseResource;
+use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\AddDeliveryCompanyRequest;
 use App\Http\Resources\DeliveryCompanyWarehouseResource;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -18,14 +19,11 @@ use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 // Admin 
 //DeliveryCompanyLog
 
-class WareHouseController extends Controller
+class WareHouseController extends BaseController
 {
-    public function store(Request $request)
+    public function store(StoreWarehouseRequest $request)
     { //! Admin
-        $data = $request->validate([
-            'name' => 'required|string',
-            'address' => 'required|string',
-        ]);
+        $data = $request->validated();
         $warehouse = Warehouse::create($data);
         return response()->json(new WarehouseResource($warehouse));
     }
@@ -87,42 +85,22 @@ class WareHouseController extends Controller
     }
 
 
-
-
-
-
-
-
-
-
-    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    public function deliveryCompaniesByGovernorate($governorate)
     {
-        $response = [
-            'success' => true,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-
-        return response()->json($response, $status);
+        $allowedGovernorates = array_column(Governorate::cases(), 'value');
+        validator(['governorate' => $governorate], [
+            'governorate' => ['required', Rule::in($allowedGovernorates)]
+        ])->validate();
+        $companies = DeliveryCompany::where('governorate', $governorate)
+            ->whereNotNull('warehouse_id')->get();
+        return DeliveryCompanyWarehouseResource::collection($companies);
     }
 
 
-    private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
+    public function deliveryCompaniesByStatus($status)
     {
-        $response = [
-            'success' => false,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-
-        return response()->json($response, $status);
+        $companies = DeliveryCompany::where('status', $status)
+            ->whereNotNull('warehouse_id')->get();
+        return DeliveryCompanyWarehouseResource::collection($companies);
     }
 }

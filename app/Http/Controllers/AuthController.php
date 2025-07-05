@@ -18,7 +18,7 @@ use App\Models\Merchant;
 
 //? done
 //! review all code
-class AuthController extends Controller
+class AuthController extends BaseController
 {
 
     public function Register(RegisterRequest $request)
@@ -174,34 +174,5 @@ class AuthController extends Controller
         ]);
 
         return $merchant;
-    }
-    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        $response = [
-            'success' => true,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-
-        return response()->json($response, $status);
-    }
-
-    private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        $response = [
-            'success' => false,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-
-        return response()->json($response, $status);
     }
 }

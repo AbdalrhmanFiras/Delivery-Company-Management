@@ -22,7 +22,6 @@ return new class extends Migration
             $table->string('customer_phone');
             $table->text('customer_address');
             $table->string('tracking_number')->nullable();
-
             $table->tinyInteger('status')->default(0);
             $table->enum('upload', ['sent', 'not sent'])->default('not sent');
             $table->decimal('total_price', 10, 2);

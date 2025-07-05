@@ -39,12 +39,6 @@ class SendAllNotSentOrdersJob implements ShouldQueue
                                 $order->warehouse_id = $order->merchant->warehouse_id;
                                 $order->save();
 
-                                WarehouseReceipts::create([
-                                    'order_id' => $order->id,
-                                    'received_by' => $order->merchant->user_id,
-                                    'received_at' => now(),
-                                ]);
-
                                 $batchLogs[] = [
                                     'order_id' => $order->id,
                                     'merchant_id' => $order->merchant_id,

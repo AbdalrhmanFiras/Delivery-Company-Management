@@ -10,7 +10,7 @@ use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
-class EmployeeController extends Controller
+class EmployeeController extends BaseController
 {
 
     public function index()
@@ -66,35 +66,5 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
-    }
-
-
-    private function successResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        $response = [
-            'success' => true,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-        return response()->json($response, $status);
-    }
-
-
-    private function errorResponse(string $message, mixed $data = null, int $status = 200): JsonResponse
-    {
-        $response = [
-            'success' => false,
-            'message' => $message,
-            'status' => $status
-        ];
-
-        if (!is_null($data)) {
-            $response['data'] = $data;
-        }
-        return response()->json($response, $status);
     }
 }
