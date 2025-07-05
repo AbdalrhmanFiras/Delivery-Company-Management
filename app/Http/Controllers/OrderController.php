@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreOrderRequest;
-use App\Http\Requests\UpdateOrderRequest;
-use App\Http\Resources\StoreOrderResource;
-use Illuminate\Http\JsonResponse;
-use App\Models\Merchant;
 use App\Models\Order;
+use App\Models\Merchant;
+use App\Models\OrderLog;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
+use App\Traits\LogsOrderChanges;
+use Illuminate\Http\JsonResponse;
 use PhpParser\Node\Stmt\TryCatch;
+use App\Http\Requests\OrderRequest;
+use Illuminate\Support\Facades\Log;
+use App\Http\Resources\OrderResource;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderRequest;
 
 class OrderController extends BaseController
 {
+    use LogsOrderChanges;
     public function store(StoreOrderRequest $request)
     {
         $data =  $request->validated();
@@ -26,11 +31,13 @@ class OrderController extends BaseController
                 'customer_address' => $data['customer_address'] ?? null,
                 'upload' => $data['upload'] ?? 'not sent'
             ]);
+            Log::info("Order #{$order->id} created by merchant {$order->merchant_id}");
 
+            $this->logOrderChange($order, 'create_order');
             return $this->successResponse(
                 'Order Created Successfully',
                 [
-                    'order' => new StoreOrderResource($order)
+                    'order' => new OrderResource($order)
                 ]
             );
         } catch (\Exception $e) {
@@ -48,13 +55,17 @@ class OrderController extends BaseController
     public function update(UpdateOrderRequest $request, $id)
     {
         $data = $request->validated();
+
         try {
             $order = Order::findOrFail($id);
+            $originalData = $order->toArray();
             $order->update($data);
+            Log::info("Order #{$order->id} updated by merchant {$order->merchant_id}");
+            $this->logOrderChange($order, 'order_update', $originalData, $order->toArray());
             return $this->successResponse(
                 'Order Updated Successfully',
                 [
-                    'order' => new StoreOrderResource($order)
+                    'order' => new OrderResource($order)
                 ]
             );
         } catch (\Exception $e) {
@@ -73,7 +84,9 @@ class OrderController extends BaseController
     {
         try {
             $order = Order::findOrFail($id);
+            Log::info("Order deleted by merchant {$order->merchant_id}");
             $order->delete();
+
             return $this->successResponse(
                 'Order Deleted Successfully'
             );
@@ -91,30 +104,30 @@ class OrderController extends BaseController
 
     public function getSentOrder()
     {
-        return StoreOrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
+        return OrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
     }
 
 
     public function getAllOrder()
     {
-        return StoreOrderResource::collection(Order::paginate(20)->all());
+        return OrderResource::collection(Order::paginate(20)->all());
     }
 
 
     public function getnotSentOrder()
     {
-        return StoreOrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
+        return OrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
     }
 
 
     public function show($id)
     {
-        return new StoreOrderResource(Order::findorfail($id));
+        return new OrderResource(Order::findorfail($id));
     }
 
 
     public function index()
     {
-        return StoreOrderResource::collection(Order::latest()->get());
+        return OrderResource::collection(Order::latest()->get());
     }
 }

@@ -7,8 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class OrderLog extends Model
 {
-    use HasUuids;
-
-
     protected $guarded = ['id'];
 }

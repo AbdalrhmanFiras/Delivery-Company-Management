@@ -23,15 +23,15 @@ class MerchantController extends BaseController
     public function sendToWarehouse(Request $request, $orderId)
     {
         Log::info("Merchant is sending order #{$orderId} to warehouse.");
-
+        $check = Order::Id($orderId)->where('upload', Order::STATUS_SENT)->first();
+        if ($check) {
+            return response()->json('This order was already sent to the warehouse.');
+        }
         try {
             DB::beginTransaction();
-            $order = Order::where('id', $orderId)
-                ->where('status', 0)
+            $order = Order::Id($orderId)
+                ->orderStatus(0)
                 ->firstOrFail();
-            if ($order->status != OrderStatus::Pending) {
-                return $this->errorResponse('Order is not in pending status.');
-            }
             $order->status = OrderStatus::AtWarehouse->value;
             $order->upload = Order::STATUS_SENT;
             $order->warehouse_id = $order->merchant->warehouse_id;
@@ -53,21 +53,19 @@ class MerchantController extends BaseController
     { // php artisan queue:work
         Log::info("Dispatching SendAllNotSentOrdersJob to process all not sent orders.");
         dispatch(new SendAllNotSentOrdersJob());
-        return $this->successResponse('All Order Are Sent');
+        return $this->successResponse('All Order Are Sent.');
     }
 
 
-    public function deleteNotSent($orderId)
+    public function delete($orderId)
     {
         Log::info("Attempting to delete not sent order #{$orderId}.");
-        $order = Order::where('id', $orderId)->where('status', Order::STATUS_NOT_SENT)->first();
+        $order = Order::Id($orderId)->where('status', Order::STATUS_NOT_SENT)->first();
         if (!$order) {
             return $this->errorResponse('Order does not exist or has already been sent.');
         }
-
         $order->delete();
         Log::info("Order #{$orderId} soft deleted successfully.");
-
         return $this->successResponse('Order Deleted Successfuly.');
     }
 }

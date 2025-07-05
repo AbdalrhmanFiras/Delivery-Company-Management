@@ -45,6 +45,12 @@ Route::apiResources([
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
     Route::post('orders/{orderid}/receive', [WarehouseOrderController::class, 'receiveOrder']);
+    Route::get('orders/{orderId}', [WarehouseOrderController::class, 'getOrder']);
+    Route::get('orders/', [WarehouseOrderController::class, 'getAllOrder']);
+    Route::get('orders/merchant/{merchantId}', [WarehouseOrderController::class, 'getAllMerchantOrder']);
+
+
+
 
 
 
@@ -63,6 +69,6 @@ Route::prefix('warehouse')->group(function () {
 Route::prefix('merchant')->group(function () {
     Route::post('/send-order/{orderid}', [MerchantController::class, 'sendToWarehouse']);
     Route::post('/send-all', [MerchantController::class, 'sentAllToWarehouse']);
-    Route::delete('delete/{orderid}', [MerchantController::class, 'deleteNotSent']);
+    Route::delete('delete/{orderid}', [MerchantController::class, 'delete']);
     Route::get('logs/{merchant}', [OrderlogController::class, 'logs']);
 });

@@ -9,7 +9,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\MerchantResource;
+use App\Http\Resources\OrderResource;
 use App\Http\Resources\WarehouseOrderResource;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class WarehouseOrderController extends BaseController
 {
@@ -35,5 +37,30 @@ class WarehouseOrderController extends BaseController
             DB::rollBack();
             return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
         }
+    }
+
+
+
+
+    public function getOrder($orderId)
+    {
+        try {
+            $order = Order::id($orderId)->orderStatus(1)->whereHas('warehouseReceipts')->firstorFail();
+            return new OrderResource($order);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Order Not Found', null, 404);
+        }
+    }
+
+
+    public function getAllOrder()
+    {
+        return OrderResource::collection(Order::orderStatus(1)->whereHas('warehouseReceipts')->paginate(20));
+    }
+
+
+    public function getAllMerchantOrder($merchantid)
+    {
+        return OrderResource::collection(Order::merchantId($merchantid)->orderStatus(1)->whereHas('warehouseReceipts')->paginate(20));
     }
 }

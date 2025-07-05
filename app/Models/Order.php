@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Enums\OrderStatus;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -37,6 +38,11 @@ class Order extends Model
         return $query->where('status', $status);
     }
 
+    public function scopeMerchantId($query, $id)
+    {
+        return $query->where('merchant_id', $id);
+    }
+
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
@@ -50,5 +56,10 @@ class Order extends Model
     public function merchant(): BelongsTo
     {
         return $this->belongsTo(Merchant::class);
+    }
+
+    public function warehouseReceipts(): HasMany
+    {
+        return $this->hasMany(WarehouseReceipts::class);
     }
 }
