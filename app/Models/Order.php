@@ -43,11 +43,15 @@ class Order extends Model
         return $query->where('merchant_id', $id);
     }
 
-    public function warehouse()
+    public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function deliverycompany(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryCompany::class);
+    }
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);

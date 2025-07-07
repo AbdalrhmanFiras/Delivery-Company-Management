@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DeliveryCompanyOrderController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\OrderController;
@@ -48,11 +49,7 @@ Route::prefix('warehouse')->group(function () {
     Route::get('orders/{orderId}', [WarehouseOrderController::class, 'getOrder']);
     Route::get('orders/', [WarehouseOrderController::class, 'getAllOrder']);
     Route::get('orders/merchant/{merchantId}', [WarehouseOrderController::class, 'getAllMerchantOrder']);
-
-
-
-
-
+    Route::post('orders/{orderid}/assign', [WarehouseOrderController::class, 'assignOrder']);
 
     Route::prefix('delivery_company')->group(function () {
         Route::post('/', [WarehouseController::class, 'addDeliveryCompany']);
@@ -65,6 +62,15 @@ Route::prefix('warehouse')->group(function () {
     });
 });
 //?------------------------------------------------------------------------------------------------------------
+Route::middleware(['auth:api', 'employee.delivery'])->group(function () {
+    Route::prefix('delivery-company')->group(function () {
+        Route::post('orders/{orderid}/receive', [DeliveryCompanyOrderController::class, 'receiveOrder']);
+        Route::get('orders/{orderid}', [DeliveryCompanyOrderController::class, 'getOrder']);
+        Route::get('orders/', [DeliveryCompanyOrderController::class, 'getAllOrder']);
+    });
+});
+
+
 
 Route::prefix('merchant')->group(function () {
     Route::post('/send-order/{orderid}', [MerchantController::class, 'sendToWarehouse']);

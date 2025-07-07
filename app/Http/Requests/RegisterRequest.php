@@ -29,7 +29,7 @@ class RegisterRequest extends FormRequest
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:500',
-            'user_type' => 'required|in:customer,driver,merchant',
+            'user_type' => 'required|in:customer,driver,merchant,employee',
 
         ];
 
@@ -49,6 +49,13 @@ class RegisterRequest extends FormRequest
                 break;
             case 'customer':
                 $baseRules = array_merge($baseRules, ['location' => 'required|string|max:225']);
+                break;
+            case 'employee':
+                $baseRules = array_merge($baseRules, [
+                    'hire_date' => 'required|date',
+                    'warehouse_id' => 'required_without:delivery_company_id|exists:warehouses,id',
+                    'delivery_company_id' => 'required_without:warehouse_id|exists:delivery_companies,id'
+                ]);
                 break;
         }
         return $baseRules;

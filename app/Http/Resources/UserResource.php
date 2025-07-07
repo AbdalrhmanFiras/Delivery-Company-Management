@@ -28,6 +28,8 @@ class UserResource extends JsonResource
                 'merchant' => new MerchantProfileResource($this->whenLoaded('merchant')),
                 // 'driver' => new DriverProfileResource($this->whenLoaded('driver')),
                 'customer' => new CustomerProfileResource($this->whenLoaded('customer')),
+                'employee' => new EmployeeProfileResource($this->whenLoaded('employee')),
+
                 default => null,
             }
 

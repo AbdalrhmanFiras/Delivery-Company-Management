@@ -22,4 +22,9 @@ class DeliveryCompany extends Model
     {
         return $this->hasMany(Driver::class);
     }
+
+    public function order(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
 }

@@ -16,7 +16,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens,HasUuids;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids;
 
 
     public function getJWTIdentifier()
@@ -41,16 +41,20 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasOne(Merchant::class);
     }
 
-    public function driver()
+    public function driver(): hasOne
     {
         return $this->hasOne(Driver::class);
     }
 
-    public function customer()
+    public function customer(): hasOne
     {
         return $this->hasOne(Customer::class);
     }
 
+    public function employee(): hasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

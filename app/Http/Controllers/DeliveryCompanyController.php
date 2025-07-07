@@ -4,4 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class DeliveryCompanyController extends BaseController {}
+class DeliveryCompanyController extends BaseController
+{
+
+    public function getAllDriver() {}
+}

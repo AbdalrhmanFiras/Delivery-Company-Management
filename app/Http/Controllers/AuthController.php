@@ -9,6 +9,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\Models\Customer;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -64,9 +65,9 @@ class AuthController extends BaseController
         $user = User::where('email', $data['email'])->first();
         $status = $this->getUserProfileStatus($user);
 
-        if ($status !== 'Active') {
-            return $this->errorResponse('Account is not active', null, 401);
-        }
+        // if ($status !== 'Active') {
+        //     return $this->errorResponse('Account is not active', null, 401);
+        // }
 
         return $this->successResponse(
             'Login successful',
@@ -95,6 +96,8 @@ class AuthController extends BaseController
                 return $user->driver?->status;
             case 'customer':
                 return $user->customer?->status;
+            case 'employee':
+                return $user->employee?->status;
             default:
                 return null;
         }
@@ -113,6 +116,7 @@ class AuthController extends BaseController
             'merchant' => 'inactive',
             'driver' => 'inactive',
             'customer' => 'active',
+            'employee' => 'active',
             default => 'active'
         };
     }
@@ -123,6 +127,8 @@ class AuthController extends BaseController
             'driver' => $this->createDriverProfile($user, $request),
             'merchant' => $this->createMerchantProfile($user, $request),
             'customer' => $this->createCustomerProfile($user, $request),
+            'employee' => $this->createEmployeeProfile($user, $request),
+
             default => null,
         };
     }
@@ -151,6 +157,21 @@ class AuthController extends BaseController
             'user_id' => $user->id,
             'address' => $request->address,
             'location' => $request->location
+
+        ]);
+    }
+
+    private function createEmployeeProfile(User $user, RegisterRequest $request)
+    {
+        return Employee::create([
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'location' => $request->loaction,
+            'user_id' => $user->id,
+            'address' => $request->address,
+            'hire_date' => $request->location,
+            'warehoue_id' => $request->warehouse_id,
+            'delivery_company_id' => $request->delivery_company_id
 
         ]);
     }

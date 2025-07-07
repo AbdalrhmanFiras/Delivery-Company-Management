@@ -24,7 +24,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => 'required|string|email|exists:users,email',
             'password' => 'required|min:8',
-            'user_type' => 'required|string|in:merchant,driver,customer'
+            'user_type' => 'required|string|in:merchant,driver,customer,employee'
         ];
     }
 }
