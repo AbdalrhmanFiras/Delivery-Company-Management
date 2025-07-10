@@ -10,14 +10,16 @@ class Driver extends Model
 {
     use HasUuids;
 
+    protected $guarded = ['id'];
+
     public function users()
     {
         return $this->belongsTo(User::class);
     }
 
-    
-    public function deliverycompany():BelongsTo{
+
+    public function deliverycompany(): BelongsTo
+    {
         return $this->belongsTo(DeliveryCompany::class);
     }
-
 }

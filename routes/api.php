@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DeliveryCompanyOrderController;
+use App\Http\Controllers\DriverController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\MerchantController;
 use App\Http\Controllers\OrderController;
@@ -70,7 +71,7 @@ Route::middleware(['auth:api', 'employee.delivery'])->group(function () {
     });
 });
 
-
+Route::post('driver/login', [DriverController::class, 'login']);
 
 Route::prefix('merchant')->group(function () {
     Route::post('/send-order/{orderid}', [MerchantController::class, 'sendToWarehouse']);

@@ -6,6 +6,7 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Http\Resources\EmpolyeeResource;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -15,25 +16,31 @@ class EmployeeController extends BaseController
 
     public function index()
     {
-        return EmpolyeeResource::collection(Employee::paginate(25));
-    }
+        $companyId = Auth::user()->employee->delivery_company_id;
 
+        return EmpolyeeResource::collection(Employee::where('delivery_company_id', $companyId)
+            ->paginate(25));
+    }
 
     public function show($employeeId)
     {
         try {
-            $employee = Employee::findOrFail($employeeId);
+            $employee = Employee::id($employeeId)
+                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->firstOrFail();
             return new EmpolyeeResource($employee);
         } catch (ModelNotFoundException $e) {
-            return $this->errorResponse('Delivery Company Not Found.', null, 404);
+            return $this->errorResponse('Employee Not Found.', null, 404);
         }
     }
-
 
     public function store(StoreEmployeeRequest $request)
     {
         $data = $request->validated();
+        $data['delivery_company_id'] = Auth::user()->employee->delivery_company_id;
+
         $employee = Employee::create($data);
+
         return $this->successResponse('Employee Added Successfully', new EmpolyeeResource($employee));
     }
 
@@ -42,7 +49,9 @@ class EmployeeController extends BaseController
     {
         $data = $request->validated();
         try {
-            $employee = Employee::findorFail($employeeId);
+            $employee = Employee::id($employeeId)
+                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->firstOrFail();
             $updated = $employee->update($data);
             if (!$updated) {
                 return $this->errorResponse('No changes detected or update failed.', null, 422);
@@ -58,7 +67,9 @@ class EmployeeController extends BaseController
     public function destroy($employeeId)
     {
         try {
-            $employee = Employee::findOrFail($employeeId);
+            $employee = Employee::id('id', $employeeId)
+                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->firstOrFail();
             $employee->delete();
             return $this->successResponse('Employee has been deleted.');
         } catch (ModelNotFoundException $e) {

@@ -45,7 +45,10 @@ class RegisterRequest extends FormRequest
                 ]);
                 break;
             case 'driver':
-                $baseRules = array_merge($baseRules, []);
+                $baseRules = array_merge($baseRules, [
+                    'vehicle_number' => 'required|string|max:6|unique:drivers,vehicle_number',
+                    'delivery_company_id' => 'required|exists:delivery_companies,id'
+                ]);
                 break;
             case 'customer':
                 $baseRules = array_merge($baseRules, ['location' => 'required|string|max:225']);

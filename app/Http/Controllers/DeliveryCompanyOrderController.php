@@ -15,8 +15,7 @@ class DeliveryCompanyOrderController extends BaseController
     public function __construct()
     {
         $this->middleware(['auth:jwt', 'employee.delivery']);
-    }
-
+    } //auth:jwt // employee role and premission 
 
 
     public function receiveOrder(Request $request, $orderId)
@@ -40,6 +39,7 @@ class DeliveryCompanyOrderController extends BaseController
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
+
 
     public function getOrder($orderId)
     {
@@ -67,7 +67,6 @@ class DeliveryCompanyOrderController extends BaseController
 
         return OrderResource::collection($orders);
     }
-
 
 
     public function getLatestOrder()

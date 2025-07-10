@@ -13,8 +13,9 @@ return new class extends Migration {
         Schema::create('drivers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
             $table->enum('status', ['Active', 'Inactive']);
-
+            $table->string('vehicle_number');
             $table->timestamps();
         });
     }

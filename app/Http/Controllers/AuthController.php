@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use App\Http\Requests\CreateUserRequest;
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
-use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Models\Driver;
 use App\Models\Customer;
 use App\Models\Employee;
+use App\Models\Merchant;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Requests\LoginRequest;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use App\Models\Merchant;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\CreateUserRequest;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 //? done
 //! review all code
@@ -136,16 +137,11 @@ class AuthController extends BaseController
 
     private function createDriverProfile(User $user, RegisterRequest $request)
     {
-        // return Driver::create([
-        //     'user_id' => $user->id,
-        //     'license_number' => $request->license_number,
-        //     'vehicle_type' => $request->vehicle_type,
-        //     'vehicle_number' => $request->vehicle_number,
-        //     'vehicle_color' => $request->vehicle_color,
-        //     'vehicle_model' => $request->vehicle_model,
-        //     'availability_status' => 'offline',
-        // ]);
-        return null;
+        return Driver::create([
+            'user_id' => $user->id,
+            'vehicle_number' => $request->vehicle_number,
+            'delivery_company_id' => $request->delivery_company_id,
+        ]);
     }
 
     private function createCustomerProfile(User $user, RegisterRequest $request)
