@@ -68,6 +68,7 @@ Route::middleware(['auth:api', 'employee.delivery'])->group(function () {
         Route::post('orders/{orderid}/receive', [DeliveryCompanyOrderController::class, 'receiveOrder']);
         Route::get('orders/{orderid}', [DeliveryCompanyOrderController::class, 'getOrder']);
         Route::get('orders/', [DeliveryCompanyOrderController::class, 'getAllOrder']);
+        Route::get('orders/assign-driver', [DeliveryCompanyOrderController::class, 'assignOrderDriver']);
     });
 });
 

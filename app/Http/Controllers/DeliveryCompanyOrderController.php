@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,6 +36,28 @@ class DeliveryCompanyOrderController extends BaseController
             ]);
             DB::commit();
             return $this->successResponse('Order received successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
+        }
+    }
+
+
+    public function assignOrderDriver(Request $request, $orderId)
+    {
+        $data = $request->validate(['driver_id' => 'required|uuid|exists:drivers,id']);
+        try {
+            $employee = Auth::user();
+            $order = Order::id($orderId)
+                ->orderStatus(2)
+                ->where('delivery_company_id', $employee->employee->delivery_company_id)
+                ->firstOrFail();
+            $order->status = OrderStatus::AssignedDriver->value;
+            $order->driver_id = $data['driver_id'];
+            $order->save();
+
+            return $this->successResponse('Order assigned to driver.');
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Order not found or not available for this company.', null, 404);
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }

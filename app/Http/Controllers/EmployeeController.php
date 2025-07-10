@@ -17,10 +17,10 @@ class EmployeeController extends BaseController
     public function index()
     {
         $companyId = Auth::user()->employee->delivery_company_id;
-
         return EmpolyeeResource::collection(Employee::where('delivery_company_id', $companyId)
             ->paginate(25));
     }
+
 
     public function show($employeeId)
     {
@@ -33,6 +33,7 @@ class EmployeeController extends BaseController
             return $this->errorResponse('Employee Not Found.', null, 404);
         }
     }
+
 
     public function store(StoreEmployeeRequest $request)
     {
