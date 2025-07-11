@@ -11,13 +11,9 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('customers', function (Blueprint $table) {
-            $table->uuid('id')->primary(); 
-            $table->string('name');
+            $table->uuid('id')->primary();
             $table->string('phone');
-            $table->string('address')->nullable();
-            $table->enum('status', ['Active', 'Inactive']);
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-
             $table->timestamps();
         });
     }

@@ -51,7 +51,7 @@ class RegisterRequest extends FormRequest
                 ]);
                 break;
             case 'customer':
-                $baseRules = array_merge($baseRules, ['location' => 'required|string|max:225']);
+                $baseRules = array_merge($baseRules, []);
                 break;
             case 'employee':
                 $baseRules = array_merge($baseRules, [

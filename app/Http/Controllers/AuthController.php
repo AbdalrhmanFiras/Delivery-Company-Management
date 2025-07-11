@@ -149,11 +149,8 @@ class AuthController extends BaseController
         return Customer::create([
             'name' => $request->name,
             'phone' => $request->phone,
-            'location' => $request->loaction,
             'user_id' => $user->id,
             'address' => $request->address,
-            'location' => $request->location
-
         ]);
     }
 

@@ -11,4 +11,23 @@ enum OrderStatus: int
     case OutForDelivery = 4;
     case Delivered = 5;
     case Cancelled = 6;
+
+
+
+
+    public function labelForCustomer(): string
+    {
+        return match ($this) {
+            self::Pending,
+            self::AtWarehouse,
+            self::AssignedDeliveryCompany,
+            self::AssignedDriver => 'Preparing your order',
+
+            self::OutForDelivery => 'Out for delivery',
+            self::Delivered      => 'Delivered',
+            self::Cancelled      => 'Cancelled',
+
+            default => 'Processing',
+        };
+    }
 }

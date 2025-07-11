@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
@@ -22,6 +23,11 @@ class Order extends Model
     protected $casts = [
         'status' => OrderStatus::class,
     ];
+
+    public function scopeForComapnyid($query, $companyId)
+    {
+        return $query->where('delivery_company_id', $companyId);
+    }
 
     public function scopeUploaded($query, $status)
     {
@@ -65,5 +71,19 @@ class Order extends Model
     public function warehouseReceipts(): HasMany
     {
         return $this->hasMany(WarehouseReceipts::class);
+    }
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($order) {
+            do {
+                $tracking = 'ORD-' . strtoupper(Str::random(8));
+            } while (self::where('tracking_number', $tracking)->exists());
+
+            $order->tracking_number = $tracking;
+        });
     }
 }

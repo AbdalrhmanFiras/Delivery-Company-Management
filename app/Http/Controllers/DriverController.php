@@ -69,7 +69,7 @@ class DriverController extends BaseController
     public function getOrders()
     {
         $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(3)->where('delivery_company_id', $user->driver->delivery_company_id)
+        return OrderResource::collection(Order::orderStatus(3)->forComapnyid($user->driver->delivery_company_id)
             ->where('driver_id', $user->driver->id)->latest()->paginate(25));
     }
 
@@ -77,7 +77,7 @@ class DriverController extends BaseController
     public function getDeliverd()
     {
         $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(5)->where('delivery_company_id', $user->driver->delivery_company_id)
+        return OrderResource::collection(Order::orderStatus(5)->forComapnyid($user->driver->delivery_company_id)
             ->where('driver_id', $user->driver->id)->latest()->paginate(25));
     }
 
@@ -85,15 +85,14 @@ class DriverController extends BaseController
     public function getCancel()
     {
         $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(6)->where('delivery_company_id', $user->driver->delivery_company_id)
+        return OrderResource::collection(Order::orderStatus(6)->forComapnyid($user->driver->delivery_company_id)
             ->where('driver_id', $user->driver->id)->latest()->paginate(25));
     }
 
-
-    // public function getOrders()
-    // {
-    //     $user = Auth::user();
-    //     return OrderResource::collection(Order::orderStatus(3)->where('delivery_company_id', $user->driver->delivery_company_id)
-    //         ->where('driver_id', $user->driver->id)->latest()->paginate(25));
-    // }
+    public function getOutDeliverd()
+    {
+        $user = Auth::user();
+        return OrderResource::collection(Order::orderStatus(4)->forComapnyid($user->driver->delivery_company_id)
+            ->where('driver_id', $user->driver->id)->latest()->paginate(25));
+    }
 }
