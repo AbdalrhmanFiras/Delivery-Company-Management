@@ -24,6 +24,11 @@ class Order extends Model
         'status' => OrderStatus::class,
     ];
 
+    public function scopePhone($query, $phone)
+    {
+        return $query->where('customer_phone', $phone);
+    }
+
     public function scopeForComapnyid($query, $companyId)
     {
         return $query->where('delivery_company_id', $companyId);

@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\Order;
+use App\Models\Customer;
 use App\Models\Merchant;
 use App\Models\OrderLog;
 use App\Enums\OrderStatus;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Traits\LogsOrderChanges;
 use Illuminate\Http\JsonResponse;
 use PhpParser\Node\Stmt\TryCatch;
 use App\Http\Requests\OrderRequest;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\OrderResource;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
@@ -23,13 +27,33 @@ class OrderController extends BaseController
     {
         $data =  $request->validated();
         try {
+            $customer = Customer::where('phone', $data['customer_phone'])->first();
+
+            if (!$customer) {
+                $user = User::create([
+                    'id' => Str::uuid(),
+                    'name' => $data['customer_name'],
+                    'email' => $data['customer_email'] ?? 'customer_' . Str::uuid() . '@noemail.local',
+                    'password' => Hash::make(Str::random(10)),
+                    'user_type' => 'customer',
+                ]);
+                $customer = Customer::create([
+                    'id' => Str::uuid(),
+                    'phone' => $data['customer_phone'],
+                    'user_id' => $user->id,
+                ]);
+            }
+
             $order = Order::create([
+                //'merchant_id' => auth()->user()->merchant->id,
                 'merchant_id' => $data['merchant_id'],
                 'total_price' => $data['total_price'],
+                'customer_id' => $customer->id,
                 'customer_name' => $data['customer_name'],
                 'customer_phone' => $data['customer_phone'],
                 'customer_address' => $data['customer_address'] ?? null,
-                'upload' => $data['upload'] ?? 'not sent'
+                'upload' => $data['upload'] ?? 'not sent',
+
             ]);
             Log::info("Order #{$order->id} created by merchant {$order->merchant_id}");
 
