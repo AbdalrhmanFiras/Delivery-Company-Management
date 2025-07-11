@@ -17,7 +17,7 @@ class DeliveryCompanyOrderController extends BaseController
 {
     public function __construct()
     {
-        $this->middleware(['auth:jwt', 'employee.delivery']);
+        $this->middleware(['auth:api', 'employee.delivery']);
     } //auth:jwt // employee role and premission 
 
 
