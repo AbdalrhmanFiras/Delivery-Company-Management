@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\Driver;
+use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Events\AutoAssignDriverEvent;
 use App\Http\Resources\OrderResource;
 use App\Models\DeliveryCompanyReceipts;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Support\Facades\Auth;
 
 class DeliveryCompanyOrderController extends BaseController
 {
@@ -64,6 +66,21 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
+    public function autoAssignDriver($orderId)
+    {
+        try {
+            $order = Order::id($orderId)
+                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->orderStatus(2)
+                ->firstOrFail();
+            event(new AutoAssignDriverEvent($order));
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Order not found.', null, 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
+        }
+    }
+
     public function getOrder($orderId)
     {
         try {
@@ -103,11 +120,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getaAssignDriver()
+    public function getOrderAssign()
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
         $orders = Order::where('delivery_company_id', $deliveryCompanyId)
-            ->where('status', 3)
+            ->orderStatus(3)
             ->get();
 
         return OrderResource::collection($orders);
@@ -133,5 +150,69 @@ class DeliveryCompanyOrderController extends BaseController
             ->get();
 
         return OrderResource::collection($orders);
+    }
+
+
+    public function filterOrders(Request $request)
+    {
+        $query = Order::query();
+
+        $companyId = Auth::user()->employee->delivery_company_id;
+        $query->where('delivery_company_id', $companyId);
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->has('from') && $request->has('to')) {
+            $query->whereBetween('created_at', [$request->from, $request->to]);
+        }
+
+        return OrderResource::collection($query->latest()->paginate(25));
+    }
+
+
+    public function cancelOrder(Request $request, $orderId)
+    {
+        $order = Order::id($orderId)
+            ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+            ->firstOrFail();
+
+        $order->status = OrderStatus::Cancelled->value;
+        $order->save();
+
+        return $this->successResponse('Order cancelled successfully.');
+    }
+
+
+    public function getSummary()
+    {
+        $companyId = Auth::user()->employee->delivery_company_id;
+
+        return response()->json([
+            'total_orders' => Order::where('delivery_company_id', $companyId)->count(),
+            'assigned' => Order::where('delivery_company_id', $companyId)->orderStatus(3)->count(),
+            'out_for_delivery' => Order::where('delivery_company_id', $companyId)->orderStatus(4)->count(),
+            'delivered' => Order::where('delivery_company_id', $companyId)->orderStatus(5)->count(),
+            'cancelled' => Order::where('delivery_company_id', $companyId)->orderStatus(6)->count(),
+        ]);
+    }
+
+
+    public function searchByTracking(Request $request)
+    {
+        $data = $request->validate([
+            'tracking_number' => 'required|string'
+        ]);
+
+        $order = Order::where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+            ->where('tracking_number', $data['tracking_number'])
+            ->first();
+
+        if (!$order) {
+            return $this->errorResponse('Order not found.', null, 404);
+        }
+
+        return new OrderResource($order);
     }
 }

@@ -66,10 +66,15 @@ Route::prefix('warehouse')->group(function () {
 //?------------------------------------------------------------------------------------------------------------
 Route::middleware(['auth:api', 'employee.delivery'])->group(function () {
     Route::prefix('delivery-company')->group(function () {
+        Route::get('orders/assign-order', [DeliveryCompanyOrderController::class, 'getOrderAssign']);
+        Route::get('orders', [DeliveryCompanyOrderController::class, 'getAllOrder']);
+        Route::get('orders/summary', [DeliveryCompanyOrderController::class, 'getSummary']);
+
+
         Route::post('orders/{orderid}/receive', [DeliveryCompanyOrderController::class, 'receiveOrder']);
+        Route::post('orders/{orderId}/auto-assign-driver', [DeliveryCompanyOrderController::class, 'autoAssignDriver']);
+        Route::post('orders/{orderId}/assign-driver', [DeliveryCompanyOrderController::class, 'assignOrderDriver']);
         Route::get('orders/{orderid}', [DeliveryCompanyOrderController::class, 'getOrder']);
-        Route::get('orders/', [DeliveryCompanyOrderController::class, 'getAllOrder']);
-        Route::get('orders/assign-driver', [DeliveryCompanyOrderController::class, 'assignOrderDriver']);
     });
 });
 //?------------------------------------------------------------------------------------------------------------
