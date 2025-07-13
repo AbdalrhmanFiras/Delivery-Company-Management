@@ -6,15 +6,18 @@ use App\Models\Order;
 use App\Models\Driver;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
+use App\Traits\LogsOrderChanges;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Events\AutoAssignDriverEvent;
 use App\Http\Resources\OrderResource;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Models\DeliveryCompanyReceipts;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeliveryCompanyOrderController extends BaseController
 {
+    use LogsOrderChanges;
+
     public function __construct()
     {
         $this->middleware(['auth:api', 'employee.delivery']);
@@ -36,11 +39,33 @@ class DeliveryCompanyOrderController extends BaseController
                 'warehouse_id' => $order->warehouse_id,
                 'received_at' => now(),
             ]);
+            $order->expected_delivery_time = now()->addHours(12);
+            $order->save();
+            $this->logOrderChange($order, 'order_time_update');
             DB::commit();
             return $this->successResponse('Order received successfully');
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
+    }
+
+    public function getLateOrders($driverId)
+    {
+        $user = Auth::user();
+        $deliveryCompanyId = $user->employee->delivery_company_id;
+
+        $lateOrdersCount = Order::where('driver_id', $driverId)
+            ->forCompanyId($deliveryCompanyId)
+            ->where('status', OrderStatus::Delivered->value)
+            ->whereNotNull('expected_delivery_time')
+            ->whereNotNull('delivered_at')
+            ->whereColumn('delivered_at', '>', 'expected_delivery_time')
+            ->count();
+
+        return response()->json([
+            'driver_id' => $driverId,
+            'late_deliveries' => $lateOrdersCount
+        ]);
     }
 
 
@@ -56,7 +81,7 @@ class DeliveryCompanyOrderController extends BaseController
             $order->status = OrderStatus::AssignedDriver->value;
             $order->driver_id = $data['driver_id'];
             $order->save();
-
+            $this->logOrderChange($order, 'order_assign_driver');
             return $this->successResponse('Order assigned to driver.');
         } catch (ModelNotFoundException $e) {
             return $this->errorResponse('Order not found or not available for this company.', null, 404);

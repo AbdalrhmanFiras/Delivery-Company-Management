@@ -77,6 +77,7 @@ class WarehouseOrderController extends BaseController
             $order->status = OrderStatus::AssignedDeliveryCompany->value;
             $order->delivery_company_id = $data['delivery_company_id'];
             $order->save();
+            $this->logOrderChange($order, 'order_status_update');
 
             return $this->successResponse('Order has been Assiged to Delivery Company.');
         } catch (\Exception $e) {

@@ -11,6 +11,7 @@ trait LogsOrderChanges
         OrderLog::create([
             'merchant_id'   => $order->merchant_id,
             'order_id'      => $order->id,
+            'driver_id'     => $order->driver_id ?? null,
             'action'        => $action,
             'original_data' => $originalData ? json_encode($originalData) : null,
             'new_data'      => $newData ? json_encode($newData) : null,

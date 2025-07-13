@@ -9,6 +9,7 @@ use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Models\DriverReceipts;
 use Illuminate\Validation\Rule;
+use App\Traits\LogsOrderChanges;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
@@ -18,9 +19,11 @@ use App\Http\Resources\OrderResource;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\CancelDriverOrderRequest;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DriverController extends BaseController
 {
+    use LogsOrderChanges;
 
     public function Login(LoginRequest $request)
     {
@@ -50,7 +53,7 @@ class DriverController extends BaseController
     {
         $user = Auth::user();
         $exists = DriverReceipts::orderId($orderId)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->firstOrFail();
+            ->where('driver_id', $user->driver->id)->exists();
         if ($exists) {
             return response()->json('This order Already been received.', 401);
         }
@@ -65,9 +68,23 @@ class DriverController extends BaseController
             ]);
             DB::commit();
             return $this->successResponse('Order received successfully');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
+        } catch (ModelNotFoundException $e) {
+            return $this->errorResponse('Driver not found.',  404);
         }
+    }
+
+
+    public function notAvailable()
+    {
+        $driver = Auth::user()?->driver;
+        if (!$driver) {
+            return $this->errorResponse('No driver profile found.', 404);
+        }
+        $driver->available = 0;
+        $driver->save();
+        return $this->successResponse('you are Not Available now.', [
+            'available' => $driver->available,
+        ]);
     }
 
 
@@ -82,11 +99,14 @@ class DriverController extends BaseController
         DB::beginTransaction();
         try {
             $order->status = OrderStatus::OutForDelivery->value;
-            $user->driver->available = false;
-            $user->save();
+            $driver = $user->driver;
+            $driver->available = false;
+            $driver->save();
             $order->save();
+            $this->logOrderChange($order, 'order_out_delivered');
+
             DB::commit();
-            return $this->successResponse('Order Assign out for Delivery');
+            return $this->successResponse('Order Assign out for Delivery.');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->errorResponse('Failed to assign out for delivery.', $e->getMessage(), 500);
@@ -105,12 +125,17 @@ class DriverController extends BaseController
         DB::beginTransaction();
         try {
             $order->status = OrderStatus::Delivered->value;
-            $user->driver->available = true;
-            $user->save();
+            $driver = $user->driver;
+            $driver->available = true;
+            $order->delivered_at = now();
+
+            $driver->save();
             $order->save();
+            $this->logOrderChange($order, 'order_Assign_delivered');
+
             DB::commit();
             return $this->successResponse('Order Assign to Deliverd');
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
             DB::rollBack();
             return $this->errorResponse('Failed to assign delivered.', $e->getMessage(), 500);
         }
@@ -157,6 +182,7 @@ class DriverController extends BaseController
 
         $order->status = OrderStatus::Cancelled->value;
         $order->save();
+        $this->logOrderChange($order, 'order_cancelled');
 
         return $this->successResponse('Order Cancelled', $reason);
     }

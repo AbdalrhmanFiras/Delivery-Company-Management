@@ -12,12 +12,14 @@ return new class extends Migration {
     {
         Schema::create('drivers', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->string('phone')->unique();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
             $table->enum('status', ['Active', 'Inactive']);
-            $table->unsignedTinyInteger('rating')->nullable()->check('rating between 1 and 5'); //! Constraint
+            $table->unsignedTinyInteger('rating')->nullable()->check('rating between 1 and 5'); //! Constraint from mySql
             $table->boolean('available')->default(true);
-            $table->text('cancel_reason')->nullable()->after('status');
+            $table->text('cancel_reason')->nullable();
+            $table->softDeletes();
             $table->string('vehicle_number');
             $table->timestamps();
         });

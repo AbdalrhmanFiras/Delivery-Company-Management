@@ -5,12 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Driver extends Model
 {
-    use HasUuids;
+    use HasUuids, SoftDeletes;
 
     protected $guarded = ['id'];
+
+
+    public function scopeForCompanyId($query, $companyId)
+    {
+        return $query->where('delivery_company_id', $companyId);
+    }
+
 
     public function users()
     {

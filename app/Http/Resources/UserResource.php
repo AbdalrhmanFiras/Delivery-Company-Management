@@ -26,7 +26,7 @@ class UserResource extends JsonResource
             'user_type' => $this->user_type,
             'profile' => match ($this->user_type) {
                 'merchant' => new MerchantProfileResource($this->whenLoaded('merchant')),
-                // 'driver' => new DriverProfileResource($this->whenLoaded('driver')),
+                'driver' => new DriverProfileResource($this->whenLoaded('driver')),
                 'customer' => new CustomerProfileResource($this->whenLoaded('customer')),
                 'employee' => new EmployeeProfileResource($this->whenLoaded('employee')),
 
