@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Events\AutoAssignDriverEvent;
 use App\Http\Resources\OrderResource;
-use App\Models\DeliveryCompanyReceipts;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\DeliveryCompanyReceipts;
 
 class DeliveryCompanyOrderController extends BaseController
 {
@@ -51,7 +51,7 @@ class DeliveryCompanyOrderController extends BaseController
             $employee = Auth::user();
             $order = Order::id($orderId)
                 ->orderStatus(2)
-                ->where('delivery_company_id', $employee->employee->delivery_company_id)
+                ->forCompanyId($employee->employee->delivery_company_id)
                 ->firstOrFail();
             $order->status = OrderStatus::AssignedDriver->value;
             $order->driver_id = $data['driver_id'];
@@ -70,7 +70,7 @@ class DeliveryCompanyOrderController extends BaseController
     {
         try {
             $order = Order::id($orderId)
-                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->forCompanyId(Auth::user()->employee->delivery_company_id)
                 ->orderStatus(2)
                 ->firstOrFail();
             event(new AutoAssignDriverEvent($order));
@@ -81,13 +81,14 @@ class DeliveryCompanyOrderController extends BaseController
         }
     }
 
+
     public function getOrder($orderId)
     {
         try {
             $referenceOrder = Order::id($orderId)
                 ->orderStatus(2)
                 ->firstOrFail();
-            $order = Order::where('delivery_company_id', $referenceOrder->delivery_company_id)->where('warehouse_id', $referenceOrder->warehouse_id)
+            $order = Order::forCompanyId($referenceOrder->delivery_company_id)->where('warehouse_id', $referenceOrder->warehouse_id)
                 ->orderStatus(2)
                 ->first();
             return new OrderResource($order);
@@ -101,7 +102,7 @@ class DeliveryCompanyOrderController extends BaseController
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
 
-        $orders = Order::where('delivery_company_id', $deliveryCompanyId)
+        $orders = Order::forCompanyId($deliveryCompanyId)
             ->where('status', 2)
             ->paginate(20);
 
@@ -112,7 +113,7 @@ class DeliveryCompanyOrderController extends BaseController
     public function getLatestOrder()
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::where('delivery_company_id', $deliveryCompanyId)
+        $orders = Order::forCompanyId($deliveryCompanyId)
             ->where('status', 2)
             ->latest()->paginate(20);
 
@@ -123,7 +124,7 @@ class DeliveryCompanyOrderController extends BaseController
     public function getOrderAssign()
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::where('delivery_company_id', $deliveryCompanyId)
+        $orders = Order::forCompanyId($deliveryCompanyId)
             ->orderStatus(3)
             ->get();
 
@@ -134,7 +135,7 @@ class DeliveryCompanyOrderController extends BaseController
     public function getOutDelivery()
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::where('delivery_company_id', $deliveryCompanyId)
+        $orders = Order::forCompanyId($deliveryCompanyId)
             ->where('status', 4)
             ->get();
 
@@ -142,10 +143,10 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getdeliverd()
+    public function getDelivered()
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::where('delivery_company_id', $deliveryCompanyId)
+        $orders = Order::forCompanyId($deliveryCompanyId)
             ->where('status', 5)
             ->get();
 
@@ -175,7 +176,7 @@ class DeliveryCompanyOrderController extends BaseController
     public function cancelOrder(Request $request, $orderId)
     {
         $order = Order::id($orderId)
-            ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+            ->forCompanyId(Auth::user()->employee->delivery_company_id)
             ->firstOrFail();
 
         $order->status = OrderStatus::Cancelled->value;
@@ -199,20 +200,17 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function searchByTracking(Request $request)
+    public function searchByTrackNumber(Request $request)
     {
         $data = $request->validate([
             'tracking_number' => 'required|string'
         ]);
-
-        $order = Order::where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+        $order = Order::forCompanyId(Auth::user()->employee->delivery_company_id)
             ->where('tracking_number', $data['tracking_number'])
             ->first();
-
         if (!$order) {
             return $this->errorResponse('Order not found.', null, 404);
         }
-
         return new OrderResource($order);
     }
 }

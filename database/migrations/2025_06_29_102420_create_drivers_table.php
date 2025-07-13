@@ -15,7 +15,9 @@ return new class extends Migration {
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignUuid('delivery_company_id')->nullable()->constrained('delivery_companies')->cascadeOnDelete();
             $table->enum('status', ['Active', 'Inactive']);
+            $table->unsignedTinyInteger('rating')->nullable()->check('rating between 1 and 5'); //! Constraint
             $table->boolean('available')->default(true);
+            $table->text('cancel_reason')->nullable()->after('status');
             $table->string('vehicle_number');
             $table->timestamps();
         });

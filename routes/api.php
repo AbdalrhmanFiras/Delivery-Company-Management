@@ -16,10 +16,6 @@ use App\Models\OrderLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
 
 Route::post('/register', [AuthController::class, 'Register']);
 Route::post('/login', [AuthController::class, 'Login']);
@@ -27,22 +23,17 @@ Route::post('/logout', [AuthController::class, 'logout']);
 
 //?------------------------------------------------------------------------------------------------------------
 
-
-
-
 Route::prefix('orders')->group(function () {
     Route::get('/notsent-order', [OrderController::class, 'getnotSentOrder']);
     Route::get('/all', [OrderController::class, 'getAllOrder']);
     Route::get('/sent-order', [OrderController::class, 'getSentOrder']);
 });
-
 //?------------------------------------------------------------------------------------------------------------
 Route::post('/item', [OrderItemsController::class, 'store']);
 Route::apiResources([
     'orders' => OrderController::class,
     'employees' => EmployeeController::class
 ]);
-
 //?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('warehouse')->group(function () {
@@ -90,12 +81,6 @@ Route::get('customer/orders', [CustomerController::class, 'getOrders']);
 Route::get('customer/compelete-orders', [CustomerController::class, 'getCompeleteOrders']);
 Route::get('customer/current-orders', [CustomerController::class, 'getCurrentOrders']);
 Route::put('customer/order/cancel', [CustomerController::class, 'cancelOrder']);
-
-
-
-
-
-
 
 
 //?------------------------------------------------------------------------------------------------------------
