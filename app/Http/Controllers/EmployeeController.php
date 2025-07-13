@@ -16,17 +16,17 @@ class EmployeeController extends BaseController
 
     public function index()
     {
-        $companyId = Auth::user()->employee->delivery_company_id;
-        return EmpolyeeResource::collection(Employee::where('delivery_company_id', $companyId)
-            ->paginate(25));
+        $context = $this->getEmployeeType();
+        $employees = Employee::where($context['from'], $context['id'])->paginate(25);
+        return EmpolyeeResource::collection($employees);
     }
 
 
     public function show($employeeId)
     {
         try {
-            $employee = Employee::id($employeeId)
-                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+            $context = $this->getEmployeeType();
+            $employee = Employee::id($employeeId)->where($context['from'], $context['id'])
                 ->firstOrFail();
             return new EmpolyeeResource($employee);
         } catch (ModelNotFoundException $e) {
@@ -35,23 +35,13 @@ class EmployeeController extends BaseController
     }
 
 
-    public function store(StoreEmployeeRequest $request)
-    {
-        $data = $request->validated();
-        $data['delivery_company_id'] = Auth::user()->employee->delivery_company_id;
-
-        $employee = Employee::create($data);
-
-        return $this->successResponse('Employee Added Successfully', new EmpolyeeResource($employee));
-    }
-
-
     public function update(UpdateEmployeeRequest $request, $employeeId)
     {
         $data = $request->validated();
+        $context = $this->getEmployeeType();
         try {
             $employee = Employee::id($employeeId)
-                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+                ->where($context['from'], $context['id'])
                 ->firstOrFail();
             $updated = $employee->update($data);
             if (!$updated) {
@@ -68,8 +58,9 @@ class EmployeeController extends BaseController
     public function destroy($employeeId)
     {
         try {
-            $employee = Employee::id('id', $employeeId)
-                ->where('delivery_company_id', Auth::user()->employee->delivery_company_id)
+            $context = $this->getEmployeeType();
+            $employee = Employee::id($employeeId)
+                ->where($context['from'], $context['id'])
                 ->firstOrFail();
             $employee->delete();
             return $this->successResponse('Employee has been deleted.');
@@ -78,5 +69,31 @@ class EmployeeController extends BaseController
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
+    }
+
+
+    private function getEmployeeType(): array
+    {
+        $employee = Auth::user()?->employee;
+
+        if (!$employee) {
+            throw new \Exception('No employee profile associated with this user.');
+        }
+
+        if ($employee->delivery_company_id) {
+            return [
+                'from' => 'delivery_company_id',
+                'id'     => $employee->delivery_company_id,
+            ];
+        }
+
+        if ($employee->warehouse_id) {
+            return [
+                'from' => 'warehouse_id',
+                'id'     => $employee->warehouse_id,
+            ];
+        }
+
+        throw new \Exception('Employee context not defined: no delivery company or warehouse ID found.');
     }
 }
