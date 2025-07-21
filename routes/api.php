@@ -75,7 +75,8 @@ Route::post('driver/login', [DriverController::class, 'login']);
 
 //?------------------------------------------------------------------------------------------------------------
 
-// Route::post('customer/login', [CustomerController::class, 'login']);
+Route::post('customer/login', [CustomerController::class, 'login']);
+Route::post('customer/verify', [CustomerController::class, 'verifyOtp']);
 Route::get('customer/order/track', [CustomerController::class, 'trackOrder']);
 Route::get('customer/orders', [CustomerController::class, 'getOrders']);
 Route::get('customer/compelete-orders', [CustomerController::class, 'getCompeleteOrders']);

@@ -4,43 +4,88 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Order;
+use App\Models\Customer;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Models\DriverFeedback;
+use App\Events\CustomerOtpLogin;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\OrderResource;
+use Illuminate\Support\Facades\Cache;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use App\Http\Requests\CustomerLoginRequest;
 use App\Http\Requests\CustomerOrderRequest;
+use Illuminate\Support\Facades\RateLimiter;
 use App\Http\Requests\SubmitFeedbackRequest;
+use Illuminate\Queue\Middleware\RateLimited;
 use App\Http\Resources\CustomerOrderResource;
+use App\Http\Requests\CustomerVerifyOtpRequest;
 use App\Http\Requests\CustomerOrderTrackrRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CustomerController extends BaseController
 {
-    public function login(Request $request)
+    public function login(CustomerLoginRequest $request)
+
     {
-        $credentials = $request->only('phone');
+        $data = $request->validated();
 
-        $user = User::where('phone', $credentials['phone'])->first();
+        $customer = Customer::where('phone', $data['phone'])->first();
+        // if (Auth::guard('api')->check()) {
+        //     return $this->successResponse('You are already logged in.');
+        // }
 
-        if (!$user) {
-            return $this->errorResponse('number not found', null, 404);
+        if (!$customer) {
+            $order = Order::where('customer_phone', $data['phone'])
+                ->select('customer_name', 'customer_phone', 'customer_address')
+                ->first();
+
+            if (!$order) {
+                return $this->errorResponse('No account or order history found for this phone number.', null, 404);
+            }
+            $customer = Customer::create([
+                'phone' => $order->customer_phone,
+                'name' => $order->customer_name,
+                'customer_address' => $order->customer_address,
+            ]);
+        }
+        if (RateLimiter::tooManyAttempts('otp:' . $data['phone'], 4)) {
+            return $this->errorResponse('Too many OTP requests. Try again later.', null, 429);
+        }
+        RateLimiter::hit('otp:' . $data['phone'], 60);
+        event(new CustomerOtpLogin($customer));
+
+        return $this->successResponse('OTP sent to your phone.');
+    }
+
+
+    public function verifyOtp(CustomerVerifyOtpRequest $request)
+    {
+        $data = $request->validated();
+        $cacheKey = 'otp_' . $data['phone'];
+
+        if (!Cache::has($cacheKey)) {
+            return $this->errorResponse('OTP expired or not found.', null, 400);
+        }
+        $cachedOtp = Cache::get($cacheKey);
+
+        if ($data['otp'] != $cachedOtp) {
+            return $this->errorResponse('Invalid OTP.', null, 400);
         }
 
-        $token = JWTAuth::fromUser($user);
+        Cache::forget($cacheKey);
+        $customer = Customer::where('phone', $data['phone'])->first();
+        $token = JWTAuth::fromUser($customer);
 
-        return $this->successResponse('Otp code has Send to your phone', null);
+        return $this->successResponse(
+            'OTP verified successfully.',
+            ['token' => $token],
+        );
     }
 
-
-    public function sendOtp(Request $request)
-    {
-        $request->validate(['phone' => 'required|string']);
-    }
 
     public function trackOrder(CustomerOrderTrackrRequest $request)
     {

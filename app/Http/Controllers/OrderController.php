@@ -28,30 +28,19 @@ class OrderController extends BaseController
     public function store(StoreOrderRequest $request)
     {
         $data =  $request->validated();
+
         try {
             $customer = Customer::where('phone', $data['customer_phone'])->first();
 
-            if (!$customer) {
-                $user = User::create([
-                    'id' => Str::uuid(),
-                    'name' => $data['customer_name'],
-                    'email' => $data['customer_email'] ?? 'customer_' . Str::uuid() . '@noemail.local',
-                    'password' => Hash::make(Str::random(10)),
-                    'user_type' => 'customer',
-                ]);
-                $customer = Customer::create([
-                    'id' => Str::uuid(),
-                    'phone' => $data['customer_phone'],
-                    'user_id' => $user->id,
-                ]);
+            if ($customer) {
+                $customerId = $customer->id;
             }
 
             $order = Order::create([
-                //                'merchant_id' => Auth::user()->merchant->id
-
+                //'merchant_id' => Auth::user()->merchant->id
                 'merchant_id' => $data['merchant_id'],
                 'total_price' => $data['total_price'],
-                'customer_id' => $customer->id,
+                'customer_id' => $customerId ?? null,
                 'customer_name' => $data['customer_name'],
                 'customer_phone' => $data['customer_phone'],
                 'customer_address' => $data['customer_address'] ?? null,
