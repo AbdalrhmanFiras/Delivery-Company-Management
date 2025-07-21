@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use App\Traits\LogsOrderChanges;
 use Illuminate\Support\Facades\DB;
 use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
@@ -63,12 +64,15 @@ class DriverController extends BaseController
                 ->where('driver_id', $user->driver->id)->firstOrFail();
             $orderReceipts = DriverReceipts::create([
                 'order_id' => $order->id,
-                'received_by' => $order->merchant->user_id,
+                'driver_id' => $user->driver->id,
+                'delivery_company_id' => $user->driver->delivery_company_id,
+                'received_by' => $user->id,
                 'received_at' => now(),
             ]);
             DB::commit();
             return $this->successResponse('Order received successfully');
         } catch (ModelNotFoundException $e) {
+            log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Driver not found.',  404);
         }
     }
@@ -107,9 +111,10 @@ class DriverController extends BaseController
 
             DB::commit();
             return $this->successResponse('Order Assign out for Delivery.');
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException) {
+            log::error("order not found with ID {$orderId} ");
             DB::rollBack();
-            return $this->errorResponse('Failed to assign out for delivery.', $e->getMessage(), 500);
+            return $this->errorResponse('Failed to assign out for delivery.', null, 500);
         }
     }
 
@@ -136,6 +141,7 @@ class DriverController extends BaseController
             DB::commit();
             return $this->successResponse('Order Assign to Deliverd');
         } catch (ModelNotFoundException $e) {
+            log::error("order not found with ID {$orderId} ");
             DB::rollBack();
             return $this->errorResponse('Failed to assign delivered.', $e->getMessage(), 500);
         }

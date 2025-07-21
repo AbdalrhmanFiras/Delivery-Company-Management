@@ -5,14 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Driver;
+use App\Models\Employee;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Requests\LoginRequest;
+use Illuminate\Support\Facades\Log;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\OrderResource;
 use App\Http\Resources\DriverResource;
+use App\Http\Resources\EmpolyeeResource;
+use App\Http\Requests\EmployeeNameRequest;
 use App\Http\Requests\UpdateDriverRequest;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -95,7 +99,9 @@ class DeliveryCompanyController extends BaseController
                 ->firstOrFail();
             return new DriverResource($driver);
         } catch (ModelNotFoundException $e) {
-            return $this->errorResponse('Driver not found.');
+            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+
+            return $this->errorResponse('Driver not found.', null, 404);
         }
     }
 
@@ -114,7 +120,11 @@ class DeliveryCompanyController extends BaseController
             $driver->update($data);
             return $this->successResponse('Driver updated Succssfully.', new DriverResource($driver));
         } catch (ModelNotFoundException $e) {
-            return $this->errorResponse('Driver not found.', 404);
+            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            return $this->errorResponse('Driver not found.', null, 404);
+        } catch (\Exception $e) {
+            Log::error("Failed to update driver ID {$driverID}: " . $e->getMessage());
+            return $this->errorResponse('Failed to update driver.', null, 500);
         }
     }
 
@@ -130,9 +140,11 @@ class DeliveryCompanyController extends BaseController
             $driver->delete();
 
             return $this->successResponse('Driver deleted Succssfully.');
-        } catch (ModelNotFoundException $e) {
-            return $this->errorResponse('Driver not found.', 404);
+        } catch (ModelNotFoundException) {
+            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            return $this->errorResponse('Driver not found.', null, 404);
         } catch (\Exception $e) {
+            Log::error("Failed to destroy driver ID {$driverID}: " . $e->getMessage());
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
@@ -146,6 +158,7 @@ class DeliveryCompanyController extends BaseController
             ->first();
 
         if (!$driver) {
+            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
             return $this->errorResponse('Driver not found or does not belong to your company.', 404);
         }
         $orders = Order::where('driver_id', $driverID)->forCompanyId($user->employee->delivery_company_id)
@@ -183,10 +196,54 @@ class DeliveryCompanyController extends BaseController
         return $this->successResponse('Driver availability updated.', ['available' => $driver->available]);
     }
 
+
     public function getStuckOrders()
     {
         return  OrderResource::collection(Order::orderStatus(3)
             ->where('updated_at', '<', now()->subHours(12))
             ->get());
+    }
+
+
+    public function getEmployees()
+    {
+        $deliveryID = Auth::user()->employee->delivery_company_id;
+        $employees = Employee::forCompanyId($deliveryID)->paginate(25);
+
+        if ($employees->isEmpty()) {
+            return response()->json(['message' => 'There is no any Employee']);
+        }
+
+        return EmpolyeeResource::collection($employees);
+    }
+
+
+    public function getEmployeebyName(EmployeeNameRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            $deliveryID = Auth::user()->employee->delivery_company_id;
+            $employee = Employee::forCompanyId($deliveryID)->whereHas('user', fn($q) => $q->where('name', $data['name']))->firstOrFail();
+            return new EmpolyeeResource($employee);
+        } catch (ModelNotFoundException) {
+            Log::error("employee not found with name {$data['name']} for company {$deliveryID}");
+
+            return $this->errorResponse('this employee is not found', null, 404);
+        }
+    }
+
+
+    public function getEmployee($employeeId)
+    {
+        try {
+            $deliveryID = Auth::user()->employee->delivery_company_id;
+            $employee = Employee::id($employeeId)->forCompanyId($deliveryID)->firstOrFail();
+
+            return new EmpolyeeResource($employee);
+        } catch (ModelNotFoundException) {
+            Log::error("employee not found with name {$employeeId} for company {$deliveryID}");
+
+            return $this->errorResponse('Employee not found', null, 404);
+        }
     }
 }

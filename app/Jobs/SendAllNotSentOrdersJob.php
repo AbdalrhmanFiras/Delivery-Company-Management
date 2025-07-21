@@ -11,10 +11,12 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\OrderLog;
+use App\Traits\LogsOrderChanges;
 
 class SendAllNotSentOrdersJob implements ShouldQueue
 {
-    use InteractsWithQueue, Queueable, SerializesModels;
+
+    use InteractsWithQueue, Queueable, SerializesModels, LogsOrderChanges;
 
     public $timeout = 3600;
     public $tries = 3;
@@ -38,6 +40,7 @@ class SendAllNotSentOrdersJob implements ShouldQueue
                                 $order->status = 1;
                                 $order->warehouse_id = $order->merchant->warehouse_id;
                                 $order->save();
+                                $this->logOrderChange($order, 'order_status_update');
 
                                 $batchLogs[] = [
                                     'order_id' => $order->id,

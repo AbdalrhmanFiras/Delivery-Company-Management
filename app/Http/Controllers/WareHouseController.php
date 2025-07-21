@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\Warehouse;
 use App\Enums\Governorate;
 use Illuminate\Http\Request;
 use App\Models\DeliveryCompany;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\EmpolyeeResource;
 use App\Http\Resources\WarehouseResource;
+use App\Http\Requests\EmployeeNameRequest;
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\AddDeliveryCompanyRequest;
 use App\Http\Resources\DeliveryCompanyWarehouseResource;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 
-// employe
+
+
 // Admin 
 //DeliveryCompanyLog
 
@@ -60,7 +65,7 @@ class WareHouseController extends BaseController
             $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
             $DeliveryCompany->delete();
             return $this->successResponse('Delivery Company has been deleted.');
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             return $this->errorResponse('Delivery Company not found or already deleted.', null, 404);
         } catch (\Exception $e) {
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
@@ -70,16 +75,18 @@ class WareHouseController extends BaseController
 
     public function getAllDeliveryCompany()
     {
-        return DeliveryCompanyWarehouseResource::collection(DeliveryCompany::whereNotNull('warehouse_id')->get());
+        $warehouseId = Auth::user()->employee->warehouse_id;
+        return DeliveryCompanyWarehouseResource::collection(DeliveryCompany::where('warehouse_id', $warehouseId)->get());
     }
 
 
     public function getDeliveryCompany($DeliveryCompanyId)
     {
+        $warehouseId = Auth::user()->employee->warehouse_id;
         try {
-            $DeliveryCompany = DeliveryCompany::where('id', $DeliveryCompanyId)->whereNotNull('warehouse_id')->firstOrFail();
+            $DeliveryCompany = DeliveryCompany::where('id', $DeliveryCompanyId)->where('warehouse_id', $warehouseId)->firstOrFail();
             return new DeliveryCompanyWarehouseResource($DeliveryCompany);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             return $this->errorResponse('Delivery Company Not Found.', null, 404);
         }
     }
@@ -87,20 +94,61 @@ class WareHouseController extends BaseController
 
     public function deliveryCompaniesByGovernorate($governorate)
     {
+        $warehouseId = Auth::user()->employee->warehouse_id;
         $allowedGovernorates = array_column(Governorate::cases(), 'value');
         validator(['governorate' => $governorate], [
             'governorate' => ['required', Rule::in($allowedGovernorates)]
         ])->validate();
         $companies = DeliveryCompany::where('governorate', $governorate)
-            ->whereNotNull('warehouse_id')->get();
+            ->where('warehouse_id', $warehouseId)->get();
         return DeliveryCompanyWarehouseResource::collection($companies);
     }
 
 
     public function deliveryCompaniesByStatus($status)
     {
+        $warehouseId = Auth::user()->employee->warehouse_id;
         $companies = DeliveryCompany::where('status', $status)
-            ->whereNotNull('warehouse_id')->get();
+            ->where('warehouse_id', $warehouseId)->get();
         return DeliveryCompanyWarehouseResource::collection($companies);
+    }
+
+
+    public function getEmployees()
+    {
+        $warehouseId = Auth::user()->employee->warehouse_id;
+        $employees = Employee::forWarehouseId($warehouseId)->paginate(25);
+
+        if ($employees->isEmpty()) {
+            return response()->json(['message' => 'There is no any Employee']);
+        }
+
+        return EmpolyeeResource::collection($employees);
+    }
+
+
+    public function getEmployeebyName(EmployeeNameRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            $warehouseId = Auth::user()->employee->warehouse_id;
+            $employee = Employee::forWarehouseId($warehouseId)->whereHas('user', fn($q) => $q->where('name', $data['name']))->firstOrFail();
+            return new EmpolyeeResource($employee);
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('this employee is not found', null, 404);
+        }
+    }
+
+
+    public function getEmployee($employeeId)
+    {
+        try {
+            $warehouseId = Auth::user()->employee->warehouse_id;
+            $employee = Employee::id($employeeId)->forWarehouseId($warehouseId)->firstOrFail();
+
+            return new EmpolyeeResource($employee);
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('Employee not found', null, 404);
+        }
     }
 }

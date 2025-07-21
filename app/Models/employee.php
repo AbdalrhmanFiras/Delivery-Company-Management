@@ -12,6 +12,21 @@ class Employee extends Model
     use HasUuids, SoftDeletes;
     protected $guarded = ['id'];
 
+    public function scopeId($query, $id)
+    {
+        return $query->where('id', $id);
+    }
+
+    public function scopeForCompanyId($query, $companyId)
+    {
+        return $query->where('delivery_company_id', $companyId);
+    }
+
+
+    public function scopeForWarehouseId($query, $warehouseID)
+    {
+        return $query->where('warehouse_id', $warehouseID);
+    }
 
 
     public function warehouse(): BelongsTo

@@ -15,10 +15,12 @@ use Illuminate\Http\JsonResponse;
 use PhpParser\Node\Stmt\TryCatch;
 use App\Http\Requests\OrderRequest;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\OrderResource;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrderController extends BaseController
 {
@@ -45,7 +47,8 @@ class OrderController extends BaseController
             }
 
             $order = Order::create([
-                //'merchant_id' => auth()->user()->merchant->id,
+                //                'merchant_id' => Auth::user()->merchant->id
+
                 'merchant_id' => $data['merchant_id'],
                 'total_price' => $data['total_price'],
                 'customer_id' => $customer->id,
@@ -67,9 +70,7 @@ class OrderController extends BaseController
         } catch (\Exception $e) {
             return $this->errorResponse(
                 'Unexpected error.',
-                [
-                    'error' => $e->getMessage()
-                ],
+                ['error' => $e->getMessage()],
                 500
             );
         }
@@ -78,12 +79,15 @@ class OrderController extends BaseController
 
     public function update(UpdateOrderRequest $request, $id)
     {
+        $merchantId = Auth::user()->merchant->id;
         $data = $request->validated();
-
         try {
-            $order = Order::findOrFail($id);
+            $order = Order::id($id)->merchantId($merchantId)->firstOrFail();
             $originalData = $order->toArray();
-            $order->update($data);
+            $updated = $order->update($data);
+            if (!$updated) {
+                return $this->errorResponse('Failed to update order.', null, 422);
+            }
             Log::info("Order #{$order->id} updated by merchant {$order->merchant_id}");
             $this->logOrderChange($order, 'order_update', $originalData, $order->toArray());
             return $this->successResponse(
@@ -93,6 +97,7 @@ class OrderController extends BaseController
                 ]
             );
         } catch (\Exception $e) {
+            Log::error("Order update failed for order #{$id} by merchant {$merchantId}: " . $e->getMessage());
             return $this->errorResponse(
                 'Unexpected error.',
                 [
@@ -106,52 +111,52 @@ class OrderController extends BaseController
 
     public function destroy($id)
     {
+        $merchantId = Auth::user()->merchant->id;
         try {
-            $order = Order::findOrFail($id);
-            Log::info("Order deleted by merchant {$order->merchant_id}");
-            $order->delete();
+            $order = Order::id($id)
+                ->merchantId($merchantId)
+                ->firstOrFail();
 
-            return $this->successResponse(
-                'Order Deleted Successfully'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse(
-                'Unexpected error.',
-                [
-                    'error' => $e->getMessage()
-                ],
-                500
-            );
+            Log::info("Order #{$order->id} deleted by merchant {$merchantId}");
+
+            $order->delete();
+            return $this->successResponse('Order Deleted Successfully');
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('Order not found.', null, 404);
         }
     }
 
 
+
     public function getSentOrder()
     {
-        return OrderResource::collection(Order::uploaded('sent')->latest()->paginate(20));
+        $merchantId = Auth::user()->merchant->id;
+        return OrderResource::collection(Order::merchantId($merchantId)->uploaded('sent')->latest()->paginate(20));
     }
 
 
     public function getAllOrder()
     {
-        return OrderResource::collection(Order::paginate(20)->all());
+        $merchantId = Auth::user()->merchant->id;
+        return OrderResource::collection(Order::merchantId($merchantId)->paginate(20));
     }
 
 
     public function getnotSentOrder()
     {
-        return OrderResource::collection(Order::uploaded('not sent')->latest()->paginate(20));
+        $merchantId = Auth::user()->merchant->id;
+        return OrderResource::collection(Order::merchantId($merchantId)->uploaded('not sent')->latest()->paginate(20));
     }
 
 
     public function show($id)
     {
-        return new OrderResource(Order::findorfail($id));
-    }
-
-
-    public function index()
-    {
-        return OrderResource::collection(Order::latest()->get());
+        $merchantId = Auth::user()->merchant->id;
+        try {
+            $order = Order::id($id)->merchantId($merchantId)->firstOrFail();
+            return $this->successResponse('Order details.', new OrderResource($order));
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('there is no Order', null, 404);
+        }
     }
 }

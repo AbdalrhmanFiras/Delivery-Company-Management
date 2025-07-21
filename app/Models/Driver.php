@@ -30,4 +30,14 @@ class Driver extends Model
     {
         return $this->belongsTo(DeliveryCompany::class);
     }
+
+    public function feedbacks()
+    {
+        return $this->hasMany(DriverFeedback::class);
+    }
+
+    public function averageRating()
+    {
+        return $this->feedbacks()->avg('rating');
+    }
 }

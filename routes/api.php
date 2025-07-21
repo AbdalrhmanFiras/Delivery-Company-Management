@@ -31,7 +31,7 @@ Route::prefix('orders')->group(function () {
 //?------------------------------------------------------------------------------------------------------------
 Route::post('/item', [OrderItemsController::class, 'store']);
 Route::apiResources([
-    'orders' => OrderController::class,
+    'orders' => OrderController::class, //merchant
     'employees' => EmployeeController::class
 ]);
 //?------------------------------------------------------------------------------------------------------------

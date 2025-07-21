@@ -2,21 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Enums\OrderStatus;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Database\Eloquent\Prunable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasFactory, HasUuids, SoftDeletes, Prunable;
 
     const STATUS_NOT_SENT = 'not sent';
     const STATUS_SENT = 'sent';
+
 
 
     protected $guarded = ['id'];
@@ -26,6 +29,12 @@ class Order extends Model
         'status' => OrderStatus::class,
     ];
 
+    public function scopeOrderfilters($query, $filters)
+    {
+
+        return $query->when($filters['delivery_company_id'] ?? null, fn($q, $id) => $q->forCompanyId($id))
+            ->when($filters['status'] ?? null, fn($q, $s) => $q->orderStatus($s));
+    }
 
     public function scopePhone($query, $phone)
     {
@@ -90,6 +99,31 @@ class Order extends Model
     public function warehouseReceipts(): HasMany
     {
         return $this->hasMany(WarehouseReceipts::class);
+    }
+
+
+    public function feedback()
+    {
+        return $this->hasOne(Feedback::class);
+    }
+
+
+    public function driverFeedback()
+    {
+        return $this->hasOne(DriverFeedback::class);
+    }
+
+
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->command('model:prune')->daily();
+    }
+
+
+    public function prunable()
+    {
+        return static::where('status',  OrderStatus::Cancelled->value)
+            ->where('updated_at', '<', now()->subMonths(6));
     }
 
 

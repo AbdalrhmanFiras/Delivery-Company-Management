@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use App\Http\Resources\EmpolyeeResource;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\EmpolyeeResource;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -30,6 +31,7 @@ class EmployeeController extends BaseController
                 ->firstOrFail();
             return new EmpolyeeResource($employee);
         } catch (ModelNotFoundException $e) {
+            Log::error("employee not found with ID {$employeeId}");
             return $this->errorResponse('Employee Not Found.', null, 404);
         }
     }
@@ -50,6 +52,7 @@ class EmployeeController extends BaseController
             $employee->refresh();
             return $this->successResponse('Employee Updated Successfully', new EmpolyeeResource($employee));
         } catch (\Exception $e) {
+            Log::error("employee not found with ID {$employeeId}");
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
@@ -65,8 +68,10 @@ class EmployeeController extends BaseController
             $employee->delete();
             return $this->successResponse('Employee has been deleted.');
         } catch (ModelNotFoundException $e) {
+            Log::error("employee not found with ID {$employeeId}");
             return $this->errorResponse('Employee not found or already deleted.', null, 404);
         } catch (\Exception $e) {
+            Log::error("employee not found with ID {$employeeId} , {$e->getMessage()}");
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }

@@ -8,10 +8,12 @@ use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Traits\LogsOrderChanges;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Events\AutoAssignDriverEvent;
 use App\Http\Resources\OrderResource;
 use App\Models\DeliveryCompanyReceipts;
+use App\Http\Requests\OrderFiltersRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeliveryCompanyOrderController extends BaseController
@@ -45,6 +47,7 @@ class DeliveryCompanyOrderController extends BaseController
             DB::commit();
             return $this->successResponse('Order received successfully');
         } catch (\Exception $e) {
+            Log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
@@ -83,9 +86,11 @@ class DeliveryCompanyOrderController extends BaseController
             $order->save();
             $this->logOrderChange($order, 'order_assign_driver');
             return $this->successResponse('Order assigned to driver.');
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
+            Log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Order not found or not available for this company.', null, 404);
         } catch (\Exception $e) {
+            Log::error("order not found with ID {$orderId}  , {$e->getMessage()}");
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
@@ -99,9 +104,11 @@ class DeliveryCompanyOrderController extends BaseController
                 ->orderStatus(2)
                 ->firstOrFail();
             event(new AutoAssignDriverEvent($order));
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
+            Log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Order not found.', null, 404);
         } catch (\Exception $e) {
+            Log::error("order not found with ID {$orderId}  , {$e->getMessage()}");
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
         }
     }
@@ -117,7 +124,8 @@ class DeliveryCompanyOrderController extends BaseController
                 ->orderStatus(2)
                 ->first();
             return new OrderResource($order);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
+            Log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Order Not Found', null, 404);
         }
     }
@@ -128,10 +136,14 @@ class DeliveryCompanyOrderController extends BaseController
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
 
         $orders = Order::forCompanyId($deliveryCompanyId)
-            ->where('status', 2)
-            ->paginate(20);
+            ->orderStatus(2)->orderByDesc('id')
+            ->cursorPaginate(25);
 
-        return OrderResource::collection($orders);
+        return response()->json([
+            'data' => OrderResource::collection($orders->items()),
+            'next_cursor' => $orders->nextCursor()?->encode(),
+            'prev_cursor' => $orders->previousCursor()?->encode(),
+        ]);
     }
 
 
@@ -139,10 +151,14 @@ class DeliveryCompanyOrderController extends BaseController
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
         $orders = Order::forCompanyId($deliveryCompanyId)
-            ->where('status', 2)
-            ->latest()->paginate(20);
+            ->orderStatus(2)
+            ->latest()->cursorPaginate(20);
 
-        return OrderResource::collection($orders);
+        return response()->json([
+            'data' => OrderResource::collection($orders->items()),
+            'next_cursor' => $orders->nextCursor()?->encode(),
+            'prev_cursor' => $orders->previousCursor()?->encode(),
+        ]);
     }
 
 
@@ -150,10 +166,13 @@ class DeliveryCompanyOrderController extends BaseController
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
         $orders = Order::forCompanyId($deliveryCompanyId)
-            ->orderStatus(3)
-            ->get();
-
-        return OrderResource::collection($orders);
+            ->orderStatus(3)->orderBy('id')
+            ->cursorPaginate(20);
+        return response()->json([
+            'data' => OrderResource::collection($orders->items()),
+            'next_cursor' => $orders->nextCursor()?->encode(),
+            'prev_cursor' => $orders->previousCursor()?->encode(),
+        ]);
     }
 
 
@@ -161,7 +180,7 @@ class DeliveryCompanyOrderController extends BaseController
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
         $orders = Order::forCompanyId($deliveryCompanyId)
-            ->where('status', 4)
+            ->orderStatus(4)
             ->get();
 
         return OrderResource::collection($orders);
@@ -172,29 +191,25 @@ class DeliveryCompanyOrderController extends BaseController
     {
         $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
         $orders = Order::forCompanyId($deliveryCompanyId)
-            ->where('status', 5)
+            ->orderStatus(5)
             ->get();
 
         return OrderResource::collection($orders);
     }
 
 
-    public function filterOrders(Request $request)
+    public function filterOrders(OrderFiltersRequest $request)
     {
-        $query = Order::query();
+        $data = $request->validated();
+        $deliveryCompanyId = Auth::user()->employee->delivery_company_id;
+        $filters = [
+            'delivery_company_id' => $deliveryCompanyId,
+            'status' => $data['status'] ?? null
+        ];
 
-        $companyId = Auth::user()->employee->delivery_company_id;
-        $query->where('delivery_company_id', $companyId);
+        $orders = Order::orderfilters($filters)->latest()->paginate(25);
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->has('from') && $request->has('to')) {
-            $query->whereBetween('created_at', [$request->from, $request->to]);
-        }
-
-        return OrderResource::collection($query->latest()->paginate(25));
+        return OrderResource::collection($orders);
     }
 
 

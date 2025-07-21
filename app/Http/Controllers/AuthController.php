@@ -139,6 +139,8 @@ class AuthController extends BaseController
     {
         return Driver::create([
             'user_id' => $user->id,
+            'phone' => $request->phone,
+
             'vehicle_number' => $request->vehicle_number,
             'delivery_company_id' => $request->delivery_company_id,
         ]);
@@ -163,7 +165,7 @@ class AuthController extends BaseController
             'user_id' => $user->id,
             'address' => $request->address,
             'hire_date' => $request->location,
-            'warehoue_id' => $request->warehouse_id,
+            'warehouse_id' => $request->warehouse_id,
             'delivery_company_id' => $request->delivery_company_id
 
         ]);
