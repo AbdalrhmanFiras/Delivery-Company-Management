@@ -32,7 +32,6 @@ class CustomerController extends BaseController
 
     {
         $data = $request->validated();
-
         $customer = Customer::where('phone', $data['phone'])->first();
         // if (Auth::guard('api')->check()) {
         //     return $this->successResponse('You are already logged in.');
@@ -78,6 +77,14 @@ class CustomerController extends BaseController
 
         Cache::forget($cacheKey);
         $customer = Customer::where('phone', $data['phone'])->first();
+        if (!$customer) {
+            return $this->errorResponse('Customer not found.', null, 404);
+        }
+
+        // if (isset($customer->is_verified) && !$customer->is_verified) {
+        //     $customer->is_verified = true;
+        //     $customer->save();
+        // }
         $token = JWTAuth::fromUser($customer);
 
         return $this->successResponse(
@@ -89,6 +96,7 @@ class CustomerController extends BaseController
 
     public function trackOrder(CustomerOrderTrackrRequest $request)
     {
+        $user = Aut
         $data = $request->validated();
         $order = Order::where('tracking_number', $data['tracking_number'])
             ->phone($data['phone'])
@@ -136,7 +144,7 @@ class CustomerController extends BaseController
             ->phone($data['phone'])
             ->latest()->paginate(10);
         if ($orders->isEmpty()) {
-            return $this->errorResponse('No active orders found.', null, 404);
+            return $this->errorResponse('No delivered orders found.', null, 404);
         }
         return  CustomerOrderResource::collection($orders);
     }

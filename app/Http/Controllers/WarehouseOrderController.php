@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Merchant;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Traits\LogsOrderChanges;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\OrderResource;
+use App\Jobs\ReceiveMerchantOrdersJob;
 use App\Http\Resources\MerchantResource;
 use App\Http\Resources\WarehouseOrderResource;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -45,6 +47,87 @@ class WarehouseOrderController extends BaseController
             return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
         }
     }
+
+
+    public function receiveAllMerchantOrders($merchantId)
+    {
+        $warehouseId = Auth::user()->employee->warehouse_id;
+        Log::info("Receiving all orders for merchant #{$merchantId} at warehouse #{1}");
+        try {
+            DB::beginTransaction();
+
+            $merchant = Merchant::findOrFail($merchantId);
+            $orders = Order::merchantId($merchantId)
+                ->where('warehouse_id', $warehouseId)
+                ->whereNotIn('id', function ($q) {
+                    $q->select('order_id')->from('warehouse_receipts');
+                })
+                ->orderStatus(1)
+                ->latest()
+                ->paginate(20);
+
+            if ($orders->isEmpty()) {
+                return $this->successResponse('No pending orders to receive for this merchant.');
+            }
+
+            foreach ($orders as $order) {
+                WarehouseReceipts::create([
+                    'order_id' => $order->id,
+                    'received_by' => $order->merchant->user_id,
+                    'received_at' => now(),
+                ]);
+
+                DB::commit();
+                return $this->successResponse("Received {$orders->count()} orders successfully.", [OrderResource::collection($orders)]);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to receive merchant orders #{$merchantId}", ['error' => $e->getMessage()]);
+            return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
+        }
+    }
+
+
+    public function receiveAllMerchantOrdersAuto($merchantId)
+    { //?
+        try {
+            $warehouseId = Auth::user()->employee->warehouse_id;
+            $merchant = Merchant::findOrFail($merchantId);
+            ReceiveMerchantOrdersJob::dispatch($merchantId, $warehouseId);
+            return $this->successResponse("Receiving merchant orders started in background job.");
+        } catch (\Exception $e) {
+            Log::error("Failed to dispatch receive orders job for merchant #{$merchantId}", ['error' => $e->getMessage()]);
+            return $this->errorResponse('Failed to start receiving orders.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    public function getAllMerchantOrderBeforeAccepet($merchantId)
+    {
+        $warehouseId = Auth::user()->employee->warehouse_id;
+        Log::info("Receiving all orders for merchant #{$merchantId} at warehouse #{$warehouseId}"); // warehouse value 
+        try {
+            $merchant = Merchant::findOrFail($merchantId);
+
+            $orders = Order::merchantId($merchantId)
+                ->where('warehouse_id', $warehouseId)
+                ->whereNotIn('id', function ($q) {
+                    return $q->select('order_id')->from('warehouse_receipts');
+                })
+                ->orderStatus(1)
+                ->paginate(20);
+
+            if ($orders->isEmpty()) {
+                Log::error("Failed to receive merchant orders #{$merchantId}");
+                return $this->successResponse('No pending orders to receive for this merchant.');
+            }
+
+            return OrderResource::collection($orders);
+        } catch (ModelNotFoundException) {
+            Log::error("Failed to find merchant #{$merchantId}");
+            return $this->errorResponse('no merchant found with this ID', null, 404);
+        }
+    }
+
 
 
     public function getOrder($orderId)

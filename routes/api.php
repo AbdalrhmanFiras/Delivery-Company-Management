@@ -39,6 +39,10 @@ Route::apiResources([
 Route::prefix('warehouse')->group(function () {
     Route::post('/', [WarehouseController::class, 'store']);
     Route::post('orders/{orderid}/receive', [WarehouseOrderController::class, 'receiveOrder']);
+    Route::post('orders/{merchantid}/auto/receive', [WarehouseOrderController::class, 'receiveAllMerchantOrdersAuto']);
+    Route::get('orders/{merchantid}/receive', [WarehouseOrderController::class, 'receiveAllMerchantOrders']);
+    Route::get('orders/{merchantid}/get/receive', [WarehouseOrderController::class, 'getAllMerchantOrderBeforeAccepet']);
+
     Route::get('orders/{orderId}', [WarehouseOrderController::class, 'getOrder']);
     Route::get('orders/', [WarehouseOrderController::class, 'getAllOrder']);
     Route::get('orders/merchant/{merchantId}', [WarehouseOrderController::class, 'getAllMerchantOrder']);
@@ -82,7 +86,6 @@ Route::get('customer/orders', [CustomerController::class, 'getOrders']);
 Route::get('customer/compelete-orders', [CustomerController::class, 'getCompeleteOrders']);
 Route::get('customer/current-orders', [CustomerController::class, 'getCurrentOrders']);
 Route::put('customer/order/cancel', [CustomerController::class, 'cancelOrder']);
-
 
 //?------------------------------------------------------------------------------------------------------------
 

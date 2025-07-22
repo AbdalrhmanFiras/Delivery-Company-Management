@@ -25,7 +25,6 @@ class AuthController extends BaseController
 
     public function Register(RegisterRequest $request)
     {
-
         $data = $request->validated();
         DB::beginTransaction();
 
@@ -50,6 +49,7 @@ class AuthController extends BaseController
             );
         }
     }
+
 
     public function Login(LoginRequest $request)
     {
@@ -78,6 +78,8 @@ class AuthController extends BaseController
             ]
         );
     }
+
+
     public function Logout(Request $request)
     {
         try {
@@ -88,6 +90,7 @@ class AuthController extends BaseController
         }
     }
 
+
     private function getUserProfileStatus(User $user)
     {
         switch ($user->user_type) {
@@ -95,8 +98,6 @@ class AuthController extends BaseController
                 return $user->merchant?->status;
             case 'driver':
                 return $user->driver?->status;
-            case 'customer':
-                return $user->customer?->status;
             case 'employee':
                 return $user->employee?->status;
             default:
@@ -116,7 +117,6 @@ class AuthController extends BaseController
         return match ($user_type) {
             'merchant' => 'inactive',
             'driver' => 'inactive',
-            'customer' => 'active',
             'employee' => 'active',
             default => 'active'
         };
@@ -127,7 +127,6 @@ class AuthController extends BaseController
         return match ($request->user_type) {
             'driver' => $this->createDriverProfile($user, $request),
             'merchant' => $this->createMerchantProfile($user, $request),
-            'customer' => $this->createCustomerProfile($user, $request),
             'employee' => $this->createEmployeeProfile($user, $request),
 
             default => null,
@@ -146,15 +145,6 @@ class AuthController extends BaseController
         ]);
     }
 
-    private function createCustomerProfile(User $user, RegisterRequest $request)
-    {
-        return Customer::create([
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'user_id' => $user->id,
-            'address' => $request->address,
-        ]);
-    }
 
     private function createEmployeeProfile(User $user, RegisterRequest $request)
     {
@@ -170,6 +160,8 @@ class AuthController extends BaseController
 
         ]);
     }
+
+
     private function createMerchantProfile(User $user, RegisterRequest $request)
     {
         $licensePath = null;

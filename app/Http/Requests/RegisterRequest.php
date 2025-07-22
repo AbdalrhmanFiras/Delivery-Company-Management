@@ -50,9 +50,6 @@ class RegisterRequest extends FormRequest
                     'delivery_company_id' => 'required|exists:delivery_companies,id'
                 ]);
                 break;
-            case 'customer':
-                $baseRules = array_merge($baseRules, []);
-                break;
             case 'employee':
                 $baseRules = array_merge($baseRules, [
                     'hire_date' => 'required|date',
