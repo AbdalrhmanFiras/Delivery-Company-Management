@@ -24,9 +24,10 @@ Route::post('/logout', [AuthController::class, 'logout']);
 //?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('orders')->group(function () {
-    Route::get('/notsent-order', [OrderController::class, 'getnotSentOrder']);
+    Route::get('/{orderId}', [OrderController::class, 'show']);
     Route::get('/all', [OrderController::class, 'getAllOrder']);
-    Route::get('/sent-order', [OrderController::class, 'getSentOrder']);
+    Route::get('/latest', [OrderController::class, 'getlatestOrders']);
+    Route::get('/summary', [OrderController::class, 'getSummary']);
 });
 //?------------------------------------------------------------------------------------------------------------
 Route::post('/item', [OrderItemsController::class, 'store']);
@@ -44,7 +45,7 @@ Route::prefix('warehouse')->group(function () {
     Route::get('orders/{merchantid}/get/receive', [WarehouseOrderController::class, 'getAllMerchantOrderBeforeAccepet']);
 
     Route::get('orders/{orderId}', [WarehouseOrderController::class, 'getOrder']);
-    Route::get('orders/', [WarehouseOrderController::class, 'getAllOrder']);
+    Route::get('orders/{$merchantId}', [WarehouseOrderController::class, 'getAllOrder']);
     Route::get('orders/merchant/{merchantId}', [WarehouseOrderController::class, 'getAllMerchantOrder']);
     Route::post('orders/{orderid}/assign', [WarehouseOrderController::class, 'assignOrder']);
 

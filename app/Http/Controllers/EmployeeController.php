@@ -77,12 +77,12 @@ class EmployeeController extends BaseController
     }
 
 
-    private function getEmployeeType(): array
+    private function getEmployeeType()
     {
         $employee = Auth::user()?->employee;
 
         if (!$employee) {
-            throw new \Exception('No employee profile associated with this user.');
+            return $this->errorResponse('No employee profile associated with this user.');
         }
 
         if ($employee->delivery_company_id) {
@@ -99,6 +99,6 @@ class EmployeeController extends BaseController
             ];
         }
 
-        throw new \Exception('Employee context not defined: no delivery company or warehouse ID found.');
+        return $this->errorResponse('Employee context not defined: no delivery company or warehouse ID found.', null, 404);
     }
 }

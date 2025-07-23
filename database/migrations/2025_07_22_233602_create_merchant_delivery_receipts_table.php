@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('warehouses', function (Blueprint $table) {
-            $table->id();
+        Schema::create('merchant_delivery_receipts', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+
+            $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignUuid('merchant_id')->constrained('merchants')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('governorate')->default('baghdad');
-            $table->string('address');
-            $table->string('contact_info')->nullable();
+            $table->foreignUuid('delivery_company_id')->constrained('delivery_companies')->cascadeOnDelete();
+            $table->timestamp('received_at');
+
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('warehouses');
+        Schema::dropIfExists('merchant_delivery_receipts');
     }
 };

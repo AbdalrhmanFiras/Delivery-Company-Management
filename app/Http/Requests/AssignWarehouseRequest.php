@@ -11,7 +11,7 @@ class AssignWarehouseRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class AssignWarehouseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //'warehouse_id' => 'required|uuid|exists:warehouses,id'
+            'warehouse_id' => 'required|exists:warehouses,id',
+            'delivery_company_id' => 'required|exists:delivery_companies,id'
         ];
     }
 }

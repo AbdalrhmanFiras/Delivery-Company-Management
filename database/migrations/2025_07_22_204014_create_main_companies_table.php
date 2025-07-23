@@ -11,13 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('warehouses', function (Blueprint $table) {
+        Schema::create('main_companies', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('merchant_id')->constrained('merchants')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('governorate')->default('baghdad');
-            $table->string('address');
-            $table->string('contact_info')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('warehouses');
+        Schema::dropIfExists('main_companies');
     }
 };

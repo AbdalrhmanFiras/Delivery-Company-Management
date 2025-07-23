@@ -206,7 +206,7 @@ class DriverController extends BaseController
 
     public function countRating()
     {
-        $ratings = Driver::id(Auth::user()->driver->id)->pluck('rating');
+        $ratings = Driver::id(Auth::user()->driver->id)->get('rating');
         $group = [
             'low' => $ratings->filter(fn($r) => $r >= 1 && $r <= 2)->count(),
             'mid' => $ratings->filter(fn($r) => $r >= 3 && $r <= 4)->count(),

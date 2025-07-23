@@ -96,7 +96,6 @@ class CustomerController extends BaseController
 
     public function trackOrder(CustomerOrderTrackrRequest $request)
     {
-        $user = Aut
         $data = $request->validated();
         $order = Order::where('tracking_number', $data['tracking_number'])
             ->phone($data['phone'])
@@ -122,19 +121,19 @@ class CustomerController extends BaseController
     }
 
 
-    public function getCurrentOrders(CustomerOrderRequest $request)
-    {
-        $data = $request->validated();
-        $orders = Order::phone($data['phone'])
-            ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value, OrderStatus::OutForDelivery->value])
-            ->latest()->paginate(10);
+    // public function getCurrentOrders(CustomerOrderRequest $request)
+    // {
+    //     $data = $request->validated();
+    //     $orders = Order::phone($data['phone'])
+    //         ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value, OrderStatus::OutForDelivery->value])
+    //         ->latest()->paginate(10);
 
-        if ($orders->isEmpty()) {
-            return $this->errorResponse('No active orders found.', null, 404);
-        }
+    //     if ($orders->isEmpty()) {
+    //         return $this->errorResponse('No active orders found.', null, 404);
+    //     }
 
-        return CustomerOrderResource::collection($orders);
-    }
+    //     return CustomerOrderResource::collection($orders);
+    // }
 
 
     public function getCompeleteOrders(CustomerOrderRequest $request)
@@ -150,22 +149,22 @@ class CustomerController extends BaseController
     }
 
 
-    public function cancelOrder(CustomerOrderTrackrRequest $request)
-    {
-        $data = $request->validated();
+    // public function cancelOrder(CustomerOrderTrackrRequest $request)
+    // {
+    //     $data = $request->validated();
 
-        $order = Order::where('tracking_number', $data['tracking_number'])
-            ->phone($data['phone'])
-            ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value])
-            ->firstOrFail();
+    //     $order = Order::where('tracking_number', $data['tracking_number'])
+    //         ->phone($data['phone'])
+    //         ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value])
+    //         ->firstOrFail();
 
-        if (!$order) {
-            return $this->errorResponse('There is no orders', null, 404);
-        }
-        $order->update(['status' => OrderStatus::Cancelled->value]);
+    //     if (!$order) {
+    //         return $this->errorResponse('There is no orders', null, 404);
+    //     }
+    //     $order->update(['status' => OrderStatus::Cancelled->value]);
 
-        return $this->successResponse('Order has been cancelled');
-    }
+    //     return $this->successResponse('Order has been cancelled');
+    // }
 
     public function submitFeedback(SubmitFeedbackRequest $request)
     {

@@ -41,7 +41,6 @@ class RegisterRequest extends FormRequest
                     'business_type' => 'nullable|string|max:100',
                     'business_license' => 'required_with:business_type|file|mimes:jpg,jpeg,png,pdf|max:2048',
                     'business_name' => 'required|string|max:100',
-                    'warehouse_id' => 'required|exists:warehouses,id'
                 ]);
                 break;
             case 'driver':

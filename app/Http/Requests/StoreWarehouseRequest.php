@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Governorate;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreWarehouseRequest extends FormRequest
@@ -24,6 +26,12 @@ class StoreWarehouseRequest extends FormRequest
         return [
             'name' => 'required|string',
             'address' => 'required|string',
+            'governorate' => [
+                'sometimes',
+                'nullable',
+                Rule::in(array_column(Governorate::cases(), 'value'))
+            ],
+            'merchant_id' => 'required|exists:merchants,id'
         ];
     }
 }

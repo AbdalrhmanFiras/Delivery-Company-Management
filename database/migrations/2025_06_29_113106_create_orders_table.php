@@ -26,8 +26,7 @@ return new class extends Migration
             $table->timestamp('expected_delivery_time')->nullable()->index();
             $table->timestamp('delivered_at')->nullable()->index();
             $table->string('tracking_number')->unique();
-            $table->tinyInteger('status')->default(0)->index();
-            $table->enum('upload', ['sent', 'not sent'])->default('not sent');
+            $table->tinyInteger('status')->default(1)->index();
 
             $table->decimal('total_price', 10, 2);
 

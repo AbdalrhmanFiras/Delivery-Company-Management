@@ -27,7 +27,8 @@ class StoreOrderRequest extends FormRequest
             'customer_phone' => 'required|string|min:11',
             'customer_address' => 'required|string',
             'total_price' => 'required|numeric|min:0',
-            'upload' => 'nullable|in:sent,not sent'
+            'warehouse_id' => 'required|exists:warehouses,id'
+
         ];
     }
 }

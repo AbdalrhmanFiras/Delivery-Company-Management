@@ -4,7 +4,6 @@ namespace App\Enums;
 
 enum OrderStatus: int
 {
-    case Pending = 0; //done
     case AtWarehouse = 1; //done
     case AssignedDeliveryCompany = 2; //done
     case AssignedDriver = 3; //done
@@ -18,7 +17,6 @@ enum OrderStatus: int
     public function labelForCustomer(): string
     {
         return match ($this) {
-            self::Pending,
             self::AtWarehouse,
             self::AssignedDeliveryCompany,
             self::AssignedDriver => 'Preparing your order',

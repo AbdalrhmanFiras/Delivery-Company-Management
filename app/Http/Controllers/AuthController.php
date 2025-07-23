@@ -178,7 +178,6 @@ class AuthController extends BaseController
             'business_name' => $request->business_name,
             'business_type' => $request->business_type,
             'business_license' => $licensePath,
-            'warehouse_id' => $request->warehouse_id
         ]);
 
         return $merchant;

@@ -16,13 +16,12 @@ class OrderResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'merchant_id' => $this->merchant_id,
             'customer_name' => $this->customer_name,
             'customer_phone' => $this->customer_phone,
             'customer_address' => $this->customer_address,
             'total_price' => $this->total_price,
-            'upload' => $this->upload,
             'create_at' => $this->created_at->format('Y-m-d'),
+            'warehouse_id' => $this->warehouse_id,
         ];
     }
 }

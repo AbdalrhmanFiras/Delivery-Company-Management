@@ -66,6 +66,11 @@ class Order extends Model
     }
 
 
+    public function scopeWarehouseId($query, $id)
+    {
+        return $query->where('warehouse_id', $id);
+    }
+
     public function scopeMerchantId($query, $id)
     {
         return $query->where('merchant_id', $id);

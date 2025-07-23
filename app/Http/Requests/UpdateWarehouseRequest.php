@@ -2,9 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Governorate;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateOrderRequest extends FormRequest
+class UpdateWarehouseRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +24,13 @@ class UpdateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'merchant_id' => 'sometimes|uuid|exists:merchants,id',
-            'customer_name' => 'sometimes',
-            'customer_phone' => 'sometimes',
-            'customer_address' => 'sometimes',
-            'total_price' => 'sometimes|numeric|min:0',
-            'warehouse_id' => 'sometimes|exists:warehouses,id'
+            'name' => 'sometimes|string',
+            'address' => 'sometimes|string',
+            'governorate' => [
+                'sometimes',
+                'nullable',
+                Rule::in(array_column(Governorate::cases(), 'value'))
+            ],
         ];
     }
 }
