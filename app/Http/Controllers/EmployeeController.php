@@ -30,7 +30,7 @@ class EmployeeController extends BaseController
             $employee = Employee::id($employeeId)->where($context['from'], $context['id'])
                 ->firstOrFail();
             return new EmpolyeeResource($employee);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             Log::error("employee not found with ID {$employeeId}");
             return $this->errorResponse('Employee Not Found.', null, 404);
         }
@@ -67,7 +67,7 @@ class EmployeeController extends BaseController
                 ->firstOrFail();
             $employee->delete();
             return $this->successResponse('Employee has been deleted.');
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             Log::error("employee not found with ID {$employeeId}");
             return $this->errorResponse('Employee not found or already deleted.', null, 404);
         } catch (\Exception $e) {

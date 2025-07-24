@@ -53,26 +53,27 @@ class DriverController extends BaseController
 
     public function receiveOrder(Request $request, $orderId)
     {
-        $user = Auth::user();
-        $exists = DriverReceipts::orderId($orderId)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->exists();
+        $driver = Auth::user()->driver;
+
+        $exists = DriverReceipts::orderId($orderId)->forCompanyId($driver->delivery_company_id)
+            ->where('driver_id', $driver->id)->exists();
         if ($exists) {
             return response()->json('This order Already been received.', 401);
         }
         try {
             DB::beginTransaction();
-            $order = Order::id($orderId)->orderStatus(3)->forCompanyId($user->driver->delivery_company_id)
-                ->where('driver_id', $user->driver->id)->firstOrFail();
+            $order = Order::id($orderId)->orderStatus(3)->forCompanyId($driver->delivery_company_id)
+                ->where('driver_id', $driver->id)->firstOrFail();
             $orderReceipts = DriverReceipts::create([
                 'order_id' => $order->id,
-                'driver_id' => $user->driver->id,
-                'delivery_company_id' => $user->driver->delivery_company_id,
-                'received_by' => $user->id,
+                'driver_id' => $driver->id,
+                'delivery_company_id' => $driver->delivery_company_id,
+                'received_by' => $driver->id,
                 'received_at' => now(),
             ]);
             DB::commit();
             return $this->successResponse('Order received successfully');
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             log::error("order not found with ID {$orderId} ");
             return $this->errorResponse('Driver not found.',  404);
         }
@@ -95,16 +96,15 @@ class DriverController extends BaseController
 
     public function assignOutDelivery($orderId)
     {
-        $user = Auth::user();
+        $driver = Auth::user()->driver;
         $order  = Order::id($orderId)
-            ->forCompanyId($user->driver->delivery_company_id)
+            ->forCompanyId($driver->delivery_company_id)
             ->orderStatus(3)
-            ->where('driver_id', $user->driver->id)
+            ->where('driver_id', $driver->id)
             ->firstOrFail();
         DB::beginTransaction();
         try {
             $order->status = OrderStatus::OutForDelivery->value;
-            $driver = $user->driver;
             $driver->available = false;
             $driver->save();
             $order->save();
@@ -122,16 +122,15 @@ class DriverController extends BaseController
 
     public function assignDelivery($orderId)
     {
-        $user = Auth::user();
+        $driver = Auth::user()->driver;
         $order  = Order::id($orderId)
-            ->forCompanyId($user->driver->delivery_company_id)
+            ->forCompanyId($driver->delivery_company_id)
             ->orderStatus(4)
-            ->where('driver_id', $user->driver->id)
+            ->where('driver_id', $driver->id)
             ->firstOrFail();
         DB::beginTransaction();
         try {
             $order->status = OrderStatus::Delivered->value;
-            $driver = $user->driver;
             $driver->available = true;
             $order->delivered_at = now();
 
@@ -154,7 +153,7 @@ class DriverController extends BaseController
         $data = $request->validate([
             'tracking_number' => 'required|string'
         ]);
-        $order = Order::forCompanyId(Auth::user()->driver->delivery_company_id)
+        $order = Order::forCompanyId(Auth::user()?->driver?->delivery_company_id)
             ->where('tracking_number', $data['tracking_number'])
             ->first();
         if (!$order) {
@@ -166,9 +165,9 @@ class DriverController extends BaseController
 
     public function getOrderSummery()
     {
-        $user = Auth::user();
-        $driverId = $user->driver->id;
-        $deliveryId = $user->driver->delivery_company_id;
+        $driver = Auth::user()->driver;
+        $driverId = $driver->id;
+        $deliveryId = $driver->delivery_company_id;
 
         return response()->json([
             'Assign' =>  Order::forCompanyId($deliveryId)->where('driver_id', $driverId)->orderStatus(3)->count(),
@@ -183,8 +182,8 @@ class DriverController extends BaseController
     {
         $data = $request->validated();
         $reason = $request->input('cancel_reason') ?: $request->input('preset_reason', 'no reason provided');
-        $user = Auth::user();
-        $order  = Order::id($orderId)->forCompanyId($user->driver->delivery_company_id)->whereBetween('status', [OrderStatus::AssignedDriver->value, OrderStatus::OutForDelivery->value])->where('driver_id', $user->driver->id)
+        $driver = Auth::user()->driver;
+        $order  = Order::id($orderId)->forCompanyId($driver->delivery_company_id)->whereBetween('status', [OrderStatus::AssignedDriver->value, OrderStatus::OutForDelivery->value])->where('driver_id', $driver->id)
             ->firstOrFail();
 
         $order->status = OrderStatus::Cancelled->value;
@@ -199,8 +198,8 @@ class DriverController extends BaseController
     {
         $data = $request->validated();
         $reason = $request->input('cancel_reason') ?: $request->input('preset_reason', 'no reason provided');
-        $user = Auth::user();
-        $order  = Order::id($orderId)->forCompanyId($user->driver->delivery_company_id)->whereBetween('status', [OrderStatus::AssignedDriver->value, OrderStatus::OutForDelivery->value])->where('driver_id', $user->driver->id)
+        $driver = Auth::user()->driver;
+        $order  = Order::id($orderId)->forCompanyId($driver->delivery_company_id)->whereBetween('status', [OrderStatus::AssignedDriver->value, OrderStatus::OutForDelivery->value])->where('driver_id', $driver->id)
             ->firstOrFail();
 
         $order->status = OrderStatus::FailedDelivery->value;
@@ -236,32 +235,32 @@ class DriverController extends BaseController
 
     public function getOrders()
     {
-        $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(3)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->latest()->paginate(25));
+        $driver = Auth::user()->driver;
+        return OrderResource::collection(Order::orderStatus(3)->forCompanyId($driver->delivery_company_id)
+            ->where('driver_id', $driver->id)->latest()->paginate(25));
     }
 
 
     public function getDeliverd()
     {
-        $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(5)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->latest()->paginate(25));
+        $driver = Auth::user()->driver;
+        return OrderResource::collection(Order::orderStatus(5)->forCompanyId($driver->delivery_company_id)
+            ->where('driver_id', $driver->id)->latest()->paginate(25));
     }
 
 
     public function getCancel()
     {
-        $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(6)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->latest()->paginate(25));
+        $driver = Auth::user()->driver;
+        return OrderResource::collection(Order::orderStatus(6)->forCompanyId($driver->delivery_company_id)
+            ->where('driver_id', $driver->id)->latest()->paginate(25));
     }
 
 
     public function getOutForDelivery()
     {
-        $user = Auth::user();
-        return OrderResource::collection(Order::orderStatus(4)->forCompanyId($user->driver->delivery_company_id)
-            ->where('driver_id', $user->driver->id)->latest()->paginate(25));
+        $driver = Auth::user()->driver;
+        return OrderResource::collection(Order::orderStatus(4)->forCompanyId($driver->delivery_company_id)
+            ->where('driver_id', $driver->id)->latest()->paginate(25));
     }
 }

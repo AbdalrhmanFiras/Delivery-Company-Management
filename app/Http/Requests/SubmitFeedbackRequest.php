@@ -23,7 +23,6 @@ class SubmitFeedbackRequest extends FormRequest
     {
         return [
             'tracking_number' => 'required|string',
-            'phone' => 'required|string|exists:orders,customer_phone',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string',
         ];

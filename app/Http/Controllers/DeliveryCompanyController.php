@@ -22,12 +22,12 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeliveryCompanyController extends BaseController
-{
+{ //test role 
 
     public function getDrivers()
     {
-        $user = Auth::user();
-        $drivers = Driver::forCompanyId($user->employee->delivery_company_id)
+        $CompanyId = Auth::user()->employee->delivery_company_id;
+        $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')
             ->latest()
             ->paginate(25);
@@ -41,9 +41,9 @@ class DeliveryCompanyController extends BaseController
 
     public function getAvailableDriver()
     {
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
 
-        $drivers = Driver::forCompanyId($user->employee->delivery_company_id)
+        $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->where('available', 1)
             ->latest()
             ->paginate(25);
@@ -57,9 +57,9 @@ class DeliveryCompanyController extends BaseController
 
     public function getBestDrivers()
     {
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
 
-        $drivers = Driver::forCompanyId($user->employee->delivery_company_id)
+        $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->where('rating' >= 4)->orderByDesc('rating')
             ->get();
 
@@ -74,8 +74,8 @@ class DeliveryCompanyController extends BaseController
 
     public function getAvgDrivers()
     {
-        $user = Auth::user();
-        $drivers = Driver::forCompanyId($user->employee->delivery_company_id)
+        $CompanyId = Auth::user()->employee->delivery_company_id;
+        $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->whereBetween('rating', [1, 3])->orderByDesc('rating')
             ->get();
 
@@ -91,15 +91,15 @@ class DeliveryCompanyController extends BaseController
 
     public function getDriver($driverID)
     {
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
         try {
-            $driver = Driver::forCompanyId($user->employee->delivery_company_id)
+            $driver = Driver::forCompanyId($CompanyId)
                 ->where('status', 'Active')
                 ->where('id', $driverID)
                 ->firstOrFail();
             return new DriverResource($driver);
         } catch (ModelNotFoundException $e) {
-            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
 
             return $this->errorResponse('Driver not found.', null, 404);
         }
@@ -109,10 +109,10 @@ class DeliveryCompanyController extends BaseController
     public function UpdateDriver(UpdateDriverRequest $request, $driverID)
     {
         $data = $request->validated();
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
 
         try {
-            $driver = Driver::forCompanyId($user->employee->delivery_company_id)
+            $driver = Driver::forCompanyId($CompanyId)
                 ->where('status', 'Active')
                 ->where('id', $driverID)
                 ->firstOrFail();
@@ -120,7 +120,7 @@ class DeliveryCompanyController extends BaseController
             $driver->update($data);
             return $this->successResponse('Driver updated Succssfully.', new DriverResource($driver));
         } catch (ModelNotFoundException $e) {
-            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
             return $this->errorResponse('Driver not found.', null, 404);
         } catch (\Exception $e) {
             Log::error("Failed to update driver ID {$driverID}: " . $e->getMessage());
@@ -131,9 +131,9 @@ class DeliveryCompanyController extends BaseController
 
     public function destroyDriver($driverID)
     {
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
         try {
-            $driver = Driver::forCompanyId($user->employee->delivery_company_id)
+            $driver = Driver::forCompanyId($CompanyId)
                 ->where('id', $driverID)
                 ->firstOrFail();
 
@@ -141,7 +141,7 @@ class DeliveryCompanyController extends BaseController
 
             return $this->successResponse('Driver deleted Succssfully.');
         } catch (ModelNotFoundException) {
-            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
             return $this->errorResponse('Driver not found.', null, 404);
         } catch (\Exception $e) {
             Log::error("Failed to destroy driver ID {$driverID}: " . $e->getMessage());
@@ -152,16 +152,16 @@ class DeliveryCompanyController extends BaseController
 
     public function getDriverOrders($driverID)
     {
-        $user = Auth::user();
+        $CompanyId = Auth::user()->employee->delivery_company_id;
         $driver = Driver::where('id', $driverID)
-            ->forCompanyId($user->employee->delivery_company_id)
+            ->forCompanyId($CompanyId)
             ->first();
 
         if (!$driver) {
-            Log::error("Driver not found with ID {$driverID} for company {$user->employee->delivery_company_id}");
+            Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
             return $this->errorResponse('Driver not found or does not belong to your company.', 404);
         }
-        $orders = Order::where('driver_id', $driverID)->forCompanyId($user->employee->delivery_company_id)
+        $orders = Order::where('driver_id', $driverID)->forCompanyId($CompanyId)
             ->latest()->get();
 
         if ($orders->count() === 0) {
@@ -173,21 +173,21 @@ class DeliveryCompanyController extends BaseController
 
     public function getDriverSummery($driverID)
     {
-        $user = Auth::user();
-        $deliveryID = $user->employee->delivery_company_id;
+        $CompanyId = Auth::user()->employee->delivery_company_id;
         $driverID = Driver::where('id', $driverID)->value('id');
         return response()->json([
-            'Assign' => Order::where('driver_id', $driverID)->forCompanyId($deliveryID)->orderStatus(3)->count(),
-            'Out' => Order::where('driver_id', $driverID)->forCompanyId($deliveryID)->orderStatus(4)->count(),
-            'Delivered' => Order::where('driver_id', $driverID)->forCompanyId($deliveryID)->orderStatus(5)->count(),
-            'Cancel' => Order::where('driver_id', $driverID)->forCompanyId($deliveryID)->orderStatus(6)->count(),
+            'Assign' => Order::where('driver_id', $driverID)->forCompanyId($CompanyId)->orderStatus(3)->count(),
+            'Out' => Order::where('driver_id', $driverID)->forCompanyId($CompanyId)->orderStatus(4)->count(),
+            'Delivered' => Order::where('driver_id', $driverID)->forCompanyId($CompanyId)->orderStatus(5)->count(),
+            'Cancel' => Order::where('driver_id', $driverID)->forCompanyId($CompanyId)->orderStatus(6)->count(),
         ]);
     }
 
 
     public function toggleAvailability($driverID)
     {
-        $driver = Driver::forCompanyId(Auth::user()->employee->delivery_company_id)
+        $CompanyId = Auth::user()->employee->delivery_company_id;
+        $driver = Driver::forCompanyId($CompanyId)
             ->findOrFail($driverID);
 
         $driver->available = 1;
@@ -207,8 +207,8 @@ class DeliveryCompanyController extends BaseController
 
     public function getEmployees()
     {
-        $deliveryID = Auth::user()->employee->delivery_company_id;
-        $employees = Employee::forCompanyId($deliveryID)->paginate(25);
+        $CompanyId = Auth::user()->employee->delivery_company_id;
+        $employees = Employee::forCompanyId($CompanyId)->paginate(25);
 
         if ($employees->isEmpty()) {
             return response()->json(['message' => 'There is no any Employee']);
@@ -220,13 +220,14 @@ class DeliveryCompanyController extends BaseController
 
     public function getEmployeebyName(EmployeeNameRequest $request)
     {
+
         try {
             $data = $request->validated();
-            $deliveryID = Auth::user()->employee->delivery_company_id;
-            $employee = Employee::forCompanyId($deliveryID)->whereHas('user', fn($q) => $q->where('name', $data['name']))->firstOrFail();
+            $CompanyId = Auth::user()->employee->delivery_company_id;
+            $employee = Employee::forCompanyId($CompanyId)->whereHas('user', fn($q) => $q->where('name', $data['name']))->firstOrFail();
             return new EmpolyeeResource($employee);
         } catch (ModelNotFoundException) {
-            Log::error("employee not found with name {$data['name']} for company {$deliveryID}");
+            Log::error("employee not found with name {$data['name']} for company {$CompanyId}");
 
             return $this->errorResponse('this employee is not found', null, 404);
         }
@@ -236,12 +237,12 @@ class DeliveryCompanyController extends BaseController
     public function getEmployee($employeeId)
     {
         try {
-            $deliveryID = Auth::user()->employee->delivery_company_id;
-            $employee = Employee::id($employeeId)->forCompanyId($deliveryID)->firstOrFail();
+            $CompanyId = Auth::user()->employee->delivery_company_id;
+            $employee = Employee::id($employeeId)->forCompanyId($CompanyId)->firstOrFail();
 
             return new EmpolyeeResource($employee);
         } catch (ModelNotFoundException) {
-            Log::error("employee not found with name {$employeeId} for company {$deliveryID}");
+            Log::error("employee not found with name {$employeeId} for company {$CompanyId}");
 
             return $this->errorResponse('Employee not found', null, 404);
         }

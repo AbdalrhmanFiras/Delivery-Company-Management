@@ -19,6 +19,7 @@ use App\Http\Controllers\WarehouseOrderController;
 use App\Http\Controllers\DeliveryCompanyOrderController;
 
 
+
 Route::post('/register', [AuthController::class, 'Register']);
 Route::post('/login', [AuthController::class, 'Login']);
 Route::post('/logout', [AuthController::class, 'logout']);
@@ -110,4 +111,6 @@ Route::prefix('admin')->group(function () {
     Route::get('/complaints', [AdminController::class, 'getComplaints']);
     Route::get('/complaints/filter', [AdminController::class, 'getComplaintsFilters']);
     Route::get('/late', [AdminController::class, 'getLateOrders']);
+    Route::get('/logs', [AdminController::class, 'getLogs']);
+    Route::get('/logs/{orderId}', [AdminController::class, 'getOrderLogs']);
 });

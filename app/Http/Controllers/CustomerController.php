@@ -28,8 +28,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CustomerController extends BaseController
 {
-    public function login(CustomerLoginRequest $request)
 
+    // test and role 
+    public function login(CustomerLoginRequest $request)
     {
         $data = $request->validated();
         $customer = Customer::where('phone', $data['phone'])->first();
@@ -61,6 +62,42 @@ class CustomerController extends BaseController
     }
 
 
+    public function loginWithOutOrder(CustomerLoginRequest $request)
+    {
+        $data = $request->validated();
+
+        $customer = Customer::where('phone', $data['phone'])->first();
+        if (!$customer) {
+            $order = Order::where('customer_phone', $data['phone'])
+                ->select('customer_name', 'customer_phone', 'customer_address')
+                ->first();
+
+            if ($order) {
+                $customer = Customer::create([
+                    'phone' => $order->customer_phone,
+                    'name' => $order->customer_name,
+                    'customer_address' => $order->customer_address,
+                ]);
+            } else {
+                $customer = Customer::create([
+                    'phone' => $data['phone'],
+                    'name' => $data['name'] ?? 'New Customer',
+                    'customer_address' => $data['customer_address'] ?? null,
+                ]);
+            }
+        }
+
+        if (RateLimiter::tooManyAttempts('otp:' . $data['phone'], 4)) {
+            return $this->errorResponse('Too many OTP requests. Try again later.', null, 429);
+        }
+
+        RateLimiter::hit('otp:' . $data['phone'], 60);
+        event(new CustomerOtpLogin($customer));
+
+        return $this->successResponse('OTP sent to your phone.');
+    }
+
+
     public function verifyOtp(CustomerVerifyOtpRequest $request)
     {
         $data = $request->validated();
@@ -81,10 +118,10 @@ class CustomerController extends BaseController
             return $this->errorResponse('Customer not found.', null, 404);
         }
 
-        // if (isset($customer->is_verified) && !$customer->is_verified) {
-        //     $customer->is_verified = true;
-        //     $customer->save();
-        // }
+        if (!$customer->is_verified) {
+            $customer->is_verified = true;
+            $customer->save();
+        }
         $token = JWTAuth::fromUser($customer);
 
         return $this->successResponse(
@@ -121,10 +158,10 @@ class CustomerController extends BaseController
         return $this->successResponse('Order has been canceled successfully.');
     }
 
-    public function getOrders(CustomerOrderRequest $request)
+    public function getOrders()
     {
-        $data = $request->validated();
-        $orders = Order::phone($data['phone'])
+        $phone = Auth::user()->customer->phone;
+        $orders = Order::phone($phone)
             ->latest()->paginate(10);
 
         if ($orders->isEmpty()) {
@@ -134,26 +171,11 @@ class CustomerController extends BaseController
     }
 
 
-    // public function getCurrentOrders(CustomerOrderRequest $request)
-    // {
-    //     $data = $request->validated();
-    //     $orders = Order::phone($data['phone'])
-    //         ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value, OrderStatus::OutForDelivery->value])
-    //         ->latest()->paginate(10);
-
-    //     if ($orders->isEmpty()) {
-    //         return $this->errorResponse('No active orders found.', null, 404);
-    //     }
-
-    //     return CustomerOrderResource::collection($orders);
-    // }
-
-
-    public function getCompeleteOrders(CustomerOrderRequest $request)
+    public function getCompeleteOrders()
     {
-        $data = $request->validated();
+        $phone = Auth::user()->customer->phone;
         $orders = Order::orderStatus(5)
-            ->phone($data['phone'])
+            ->phone($phone)
             ->latest()->paginate(10);
         if ($orders->isEmpty()) {
             return $this->errorResponse('No delivered orders found.', null, 404);
@@ -162,29 +184,13 @@ class CustomerController extends BaseController
     }
 
 
-    // public function cancelOrder(CustomerOrderTrackrRequest $request)
-    // {
-    //     $data = $request->validated();
-
-    //     $order = Order::where('tracking_number', $data['tracking_number'])
-    //         ->phone($data['phone'])
-    //         ->whereIn('status', [OrderStatus::Pending->value, OrderStatus::AtWarehouse->value])
-    //         ->firstOrFail();
-
-    //     if (!$order) {
-    //         return $this->errorResponse('There is no orders', null, 404);
-    //     }
-    //     $order->update(['status' => OrderStatus::Cancelled->value]);
-
-    //     return $this->successResponse('Order has been cancelled');
-    // }
-
     public function submitFeedback(SubmitFeedbackRequest $request)
     {
+        $phone = Auth::user()->customer->phone;
         $data = $request->validated();
         try {
             $order = Order::where('tracking_number', $data['tracking_number'])
-                ->where('customer_phone', $data['phone'])
+                ->where('customer_phone', $phone)
                 ->orderStatus(5)
                 ->firstOrFail();
 

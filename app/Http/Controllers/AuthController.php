@@ -66,9 +66,6 @@ class AuthController extends BaseController
         $user = User::where('email', $data['email'])->first();
         $status = $this->getUserProfileStatus($user);
 
-        // if ($status !== 'Active') {
-        //     return $this->errorResponse('Account is not active', null, 401);
-        // }
 
         return $this->successResponse(
             'Login successful',

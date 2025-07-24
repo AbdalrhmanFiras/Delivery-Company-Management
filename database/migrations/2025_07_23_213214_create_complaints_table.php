@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignUuid('order_id')->nullable()->constrained('orders')->nullOnDelete();
             $table->foreignUuid('customer_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->enum('type', ['delivery', 'product', 'payment', 'other']);
+            $table->foreignUuid('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->enum('status', ['open', 'in_progress', 'closed'])->default('open');
             $table->text('message');
             $table->timestamps();
         });

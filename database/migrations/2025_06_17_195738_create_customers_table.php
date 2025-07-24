@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('name');
             $table->string('phone')->unique();
             $table->text('customer_address');
+            $table->boolean('is_verified')->default(false);
             $table->timestamps();
         });
     }
