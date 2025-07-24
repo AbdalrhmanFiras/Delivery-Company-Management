@@ -29,7 +29,7 @@ class OrderController extends BaseController
 {
     use LogsOrderChanges;
     public function store(StoreOrderRequest $request)
-    { //! merchant , admin
+    { //! merchant , Superadmin
         $data =  $request->validated();
         // $merchantId = Auth::user()->merchant->id;
         try {
@@ -68,7 +68,7 @@ class OrderController extends BaseController
 
 
     public function update(UpdateOrderRequest $request, $orderId)
-    { //! merchant , admin
+    { //! merchant , Supportadmin
         $merchantId = Auth::user()->merchant->id;
         $data = $request->validated();
         try {
@@ -173,7 +173,7 @@ class OrderController extends BaseController
     {
         $data = $request->validated();
         $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::merchantId($merchantId)->where('warehouse_id', $data['warehouse_id'])->value('name');
+        $warehouse = Warehouse::merchantId($merchantId)->where('id', $data['warehouse_id'])->value('name');
         $totalOrders = Order::merchantId($merchantId)
             ->warehouseId($data['warehouse_id'])
             ->count();
@@ -260,8 +260,6 @@ class OrderController extends BaseController
     }
 
 
-
-
     public function getlatestOrders()
     { //! merchant , admin
         $merchantId = Auth::user()->merchant->id;
@@ -271,21 +269,41 @@ class OrderController extends BaseController
         );
     }
 
-
+    // check it later 
     public function show($orderId)
-    { //! merchant , admin
-        $merchantId = Auth::user()->merchant->id;
+    {
         try {
-            $order = Order::id($orderId)->merchantId($merchantId)->firstOrFail();
-            Log::info("merchant {$merchantId} get {$orderId}.");
+            $user = Auth::user();
+
+            $merchantId = $user->merchant->id ?? null;
+
+            if (!$merchantId && !$user->hasRole('admin') && !$user->hasRole('supportadmin')) {
+                Log::warning("Unauthorized attempt to access order {$orderId} by user {$user->id}");
+                return $this->errorResponse('Unauthorized.', 403);
+            }
+
+            $query = Order::id($orderId);
+
+            if ($merchantId) {
+                $query->merchantId($merchantId);
+            }
+
+            $order = $query->firstOrFail();
+
+            Log::info("User {$user->id} viewed order {$orderId}.");
+
             return $this->successResponse('Order details.', new OrderResource($order));
         } catch (ModelNotFoundException $e) {
-            Log::warning('Cancelled order not found', [
-                'merchant_id' => $merchantId,
-                'order_id' => $orderId,
-                'error' => $e->getMessage()
+            Log::warning("Order not found", [
+                'user_id' => Auth::id(),
+                'order_id' => $orderId
             ]);
-            return $this->errorResponse('Order not found.');
+            return $this->errorResponse('Order not found.', 404);
+        } catch (\Throwable $e) {
+            Log::error("Failed to retrieve order {$orderId}: " . $e->getMessage(), [
+                'user_id' => Auth::id()
+            ]);
+            return $this->errorResponse('Unexpected error occurred.');
         }
     }
 }

@@ -1,20 +1,22 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\DeliveryCompanyOrderController;
-use App\Http\Controllers\DriverController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\MerchantController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\WareHouseController;
-use App\Http\Controllers\OrderItemsController;
-use App\Http\Controllers\OrderlogController;
-use App\Http\Controllers\WarehouseOrderController;
-use App\Models\OrderItem;
 use App\Models\OrderLog;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AdminController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\DriverController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\MerchantController;
+use App\Http\Controllers\OrderlogController;
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\WareHouseController;
+use App\Http\Controllers\OrderItemsController;
+use App\Http\Controllers\WarehouseOrderController;
+use App\Http\Controllers\DeliveryCompanyOrderController;
 
 
 Route::post('/register', [AuthController::class, 'Register']);
@@ -28,6 +30,7 @@ Route::prefix('orders')->group(function () {
     Route::get('/all', [OrderController::class, 'getAllOrder']);
     Route::get('/latest', [OrderController::class, 'getlatestOrders']);
     Route::get('/summary', [OrderController::class, 'getSummary']);
+    //test
 });
 //?------------------------------------------------------------------------------------------------------------
 Route::post('/item', [OrderItemsController::class, 'store']);
@@ -59,6 +62,7 @@ Route::prefix('warehouse')->group(function () {
         Route::delete('/{delivery_company}', [WarehouseController::class, 'destroyDeliveryCompany']);
     });
 });
+
 //?------------------------------------------------------------------------------------------------------------
 Route::middleware(['auth:api', 'employee.delivery'])->group(function () {
     Route::prefix('delivery-company')->group(function () {
@@ -88,6 +92,8 @@ Route::get('customer/compelete-orders', [CustomerController::class, 'getCompelet
 Route::get('customer/current-orders', [CustomerController::class, 'getCurrentOrders']);
 Route::put('customer/order/cancel', [CustomerController::class, 'cancelOrder']);
 
+Route::post('customer/complaint', [ComplaintController::class, 'store']);
+
 //?------------------------------------------------------------------------------------------------------------
 
 Route::prefix('merchant')->group(function () {
@@ -95,4 +101,13 @@ Route::prefix('merchant')->group(function () {
     Route::post('/send-all', [MerchantController::class, 'sentAllToWarehouse']);
     Route::delete('delete/{orderid}', [MerchantController::class, 'delete']);
     Route::get('logs/{merchant}', [OrderlogController::class, 'logs']);
+});
+
+Route::prefix('admin')->group(function () {
+
+
+    Route::post('/assign-company/{orderId}', [AdminController::class, 'AssignOrderToDeliveryCompany']);
+    Route::get('/complaints', [AdminController::class, 'getComplaints']);
+    Route::get('/complaints/filter', [AdminController::class, 'getComplaintsFilters']);
+    Route::get('/late', [AdminController::class, 'getLateOrders']);
 });

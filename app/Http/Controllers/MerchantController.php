@@ -71,17 +71,17 @@ class MerchantController extends BaseController
     // }
 
 
-    public function delete($orderId)
-    {
-        $merchantId = Auth::user()->merchant->id;
-        Log::info("Attempting to delete not sent order #{$orderId}.");
-        $order = Order::Id($orderId)->merchantId($merchantId)->where('status', Order::STATUS_NOT_SENT)->first();
-        if (!$order) {
-            return $this->errorResponse('Order does not exist or has already been sent.');
-            Log::error("order not found with ID {$orderId} ");
-        }
-        Log::info("Order #{$orderId} soft deleted successfully.");
-        $order->delete();
-        return $this->successResponse('Order Deleted Successfuly.');
-    }
+    // public function delete($orderId)
+    // {
+    //     $merchantId = Auth::user()->merchant->id;
+    //     Log::info("Attempting to delete not sent order #{$orderId}.");
+    //     $order = Order::Id($orderId)->merchantId($merchantId)->where('status', Order::STATUS_NOT_SENT)->first();
+    //     if (!$order) {
+    //         return $this->errorResponse('Order does not exist or has already been sent.');
+    //         Log::error("order not found with ID {$orderId} ");
+    //     }
+    //     Log::info("Order #{$orderId} soft deleted successfully.");
+    //     $order->delete();
+    //     return $this->successResponse('Order Deleted Successfuly.');
+    // }
 }

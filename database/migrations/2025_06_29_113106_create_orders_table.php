@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('customer_phone')->index();
             $table->text('customer_address');
 
+            $table->string('governorate')->default('baghdad');
             $table->timestamp('expected_delivery_time')->nullable()->index();
             $table->timestamp('delivered_at')->nullable()->index();
             $table->string('tracking_number')->unique();

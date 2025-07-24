@@ -5,7 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class CancelDriverOrderRequest extends FormRequest
+
+class ComplaintStoreRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +23,13 @@ class CancelDriverOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        $cancel = config('reasons.cancel', []);
-
         return [
-            'cancel_reason' => 'nullable|string',
-            'present_reason' => ['nullable', 'string', Rule::in($cancel)],
+            'order_id' => [
+                'required',
+                Rule::exists('orders', 'id')->where('status', 5),
+            ],
+            'type' => 'required|in:delivery,product,payment,other',
+            'message' => 'required|string|max:1000',
         ];
     }
 }

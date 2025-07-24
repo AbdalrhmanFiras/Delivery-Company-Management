@@ -50,7 +50,7 @@ class ReceiveMerchantOrdersJob implements ShouldQueue
             foreach ($orders as $order) {
                 WarehouseReceipts::create([
                     'order_id' => $order->id,
-                    'received_by' => $order->merchant->user_id,
+                    'received_by' => $order->merchant ? $order->merchant->user_id : null,
                     'received_at' => now(),
                 ]);
             }

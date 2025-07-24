@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\OrderResource;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Http\Requests\CancelDriverOrderRequest;
+use App\Http\Requests\FailedDriverOrderRequest;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -178,7 +179,7 @@ class DriverController extends BaseController
     }
 
 
-    public function assignCancel(CancelDriverOrderRequest $request, $orderId)
+    public function markCancel(CancelDriverOrderRequest $request, $orderId)
     {
         $data = $request->validated();
         $reason = $request->input('cancel_reason') ?: $request->input('preset_reason', 'no reason provided');
@@ -192,6 +193,23 @@ class DriverController extends BaseController
 
         return $this->successResponse('Order Cancelled', $reason);
     }
+
+
+    public function markFailed(FailedDriverOrderRequest $request, $orderId)
+    {
+        $data = $request->validated();
+        $reason = $request->input('cancel_reason') ?: $request->input('preset_reason', 'no reason provided');
+        $user = Auth::user();
+        $order  = Order::id($orderId)->forCompanyId($user->driver->delivery_company_id)->whereBetween('status', [OrderStatus::AssignedDriver->value, OrderStatus::OutForDelivery->value])->where('driver_id', $user->driver->id)
+            ->firstOrFail();
+
+        $order->status = OrderStatus::FailedDelivery->value;
+        $order->save();
+        $this->logOrderChange($order, 'order_FailedDelivered');
+
+        return $this->successResponse('Order Failed to Delivered', $reason);
+    }
+
 
 
     public function getRating()

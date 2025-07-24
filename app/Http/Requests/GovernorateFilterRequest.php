@@ -2,10 +2,11 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Enums\Governorate;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Http\FormRequest;
 
-class CancelDriverOrderRequest extends FormRequest
+class GovernorateFilterRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +23,12 @@ class CancelDriverOrderRequest extends FormRequest
      */
     public function rules(): array
     {
-        $cancel = config('reasons.cancel', []);
-
         return [
-            'cancel_reason' => 'nullable|string',
-            'present_reason' => ['nullable', 'string', Rule::in($cancel)],
+            'governorate' => [
+                'sometimes',
+                'nullable',
+                Rule::in(array_column(Governorate::cases(), 'value')),
+            ],
         ];
     }
 }

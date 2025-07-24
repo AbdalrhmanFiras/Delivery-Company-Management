@@ -37,7 +37,7 @@ class DeliveryCompanyOrderController extends BaseController
             $order = Order::id($orderId)->orderStatus(2)->firstOrFail();
             $orderReceipts = DeliveryCompanyReceipts::create([
                 'order_id' => $order->id,
-                'received_by' => $order->merchant->user_id,
+                'received_by' => $order->merchant ? $order->merchant->user_id : null,
                 'warehouse_id' => $order->warehouse_id,
                 'received_at' => now(),
             ]);

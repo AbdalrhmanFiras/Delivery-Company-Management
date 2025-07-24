@@ -108,6 +108,19 @@ class CustomerController extends BaseController
     }
 
 
+    public function cancelOrder($orderId)
+    {
+        $customer = Auth::user()->customer;
+        $order = Order::id($orderId)->phone($customer->phone)
+            ->where('status', [OrderStatus::AtWarehouse->value])
+            ->first();
+        if (!$order) {
+            return $this->errorResponse('Order not found or cannot be canceled.', null, 404);
+        }
+        $order->update(['status' => OrderStatus::Cancelled->value]);
+        return $this->successResponse('Order has been canceled successfully.');
+    }
+
     public function getOrders(CustomerOrderRequest $request)
     {
         $data = $request->validated();

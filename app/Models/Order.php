@@ -17,10 +17,6 @@ class Order extends Model
 {
     use HasFactory, HasUuids, SoftDeletes, Prunable;
 
-    const STATUS_NOT_SENT = 'not sent';
-    const STATUS_SENT = 'sent';
-
-
 
     protected $guarded = ['id'];
 
