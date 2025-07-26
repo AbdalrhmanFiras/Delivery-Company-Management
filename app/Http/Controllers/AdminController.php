@@ -13,6 +13,7 @@ use App\Models\ComplaintReply;
 use App\Models\DeliveryCompany;
 use Illuminate\Validation\Rule;
 use App\Traits\LogsOrderChanges;
+use PhpParser\Node\Stmt\TryCatch;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Resources\OrderResource;
@@ -21,18 +22,21 @@ use App\Http\Resources\ComplaintsResource;
 use App\Http\Requests\AdminWarehouseRequest;
 use App\Http\Requests\ReplieComplaintRequest;
 use App\Http\Requests\ComplaintsFilterRequest;
+use App\Http\Requests\VaildateMerchantRequest;
 use App\Http\Requests\GovernorateFilterRequest;
+use App\Http\Resources\DeliveryCompanyResource;
+use App\Http\Requests\AddDeliveryCompanyRequest;
 use App\Http\Requests\VaildateDeliveryCompanyRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use PhpParser\Node\Stmt\TryCatch;
+use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 
 class AdminController extends BaseController
 {
     // for admin that can controller the order 
     use LogsOrderChanges;
+
     public function getAllOrder()
     {
-
         $orders = Order::orderStatus(1)->whereNotNull('warehouse_id')->cursorPaginate(20);
         if (empty($orders->items())) {
             Log::info('No orders found at warehouse status.');
@@ -47,17 +51,18 @@ class AdminController extends BaseController
     {
         $data = $request->validated();
         $orders = Order::where('governorate', $data['governorate'])->orderStatus(1)->whereNotNull('warehouse_id')->cursorPaginate(20);
-        if (empty($orders->items())) {
-            Log::info('No orders found at this governorate.');
-            return $this->successResponse('there is no order at this Governorate yet.');
+        if ($orders->isEmpty()) {
+            Log::info('No orders found at this governorate.', ['governorate' => $data['governorate']]);
+            return $this->errorResponse('No orders found for this governorate.', null, 404);
         }
         return OrderResource::collection($orders);
     }
 
 
-    public function getAllMerchantOrder($merchantId)
+    public function getAllMerchantOrder(VaildateMerchantRequest $request)
     {
-        $orders = Order::merchantId($merchantId)->orderStatus(1)->whereNotNull('warehouse_id')->cursorPaginate(20);
+        $data = $request->validated();
+        $orders = Order::merchantId($data['merchant_id'])->cursorPaginate(20);
         if (count($orders->items()) === 0) {
             Log::info('No orders found for that merchant.');
             return $this->successResponse('there is no order at warehouse status yet.');
@@ -66,7 +71,7 @@ class AdminController extends BaseController
     }
 
 
-    public function getAllMerchantOrderfromWarehouse(AdminWarehouseRequest $request)
+    public function getAllOrdersWarehouse(AdminWarehouseRequest $request)
     {
         $data = $request->validated();
         $orders = Order::merchantId($data['merchant_id'])->orderStatus(1)->warehouseId($data['warehouse_id'])->cursorPaginate(20);
@@ -145,16 +150,17 @@ class AdminController extends BaseController
     }
 
 
-    public function getAllMerchantAssignOrder($merchantId)
+    public function getAllMerchantAssignOrder(VaildateMerchantRequest $request)
     {
-        $orders = Order::merchantId($merchantId)->orderStatus(2)->whereNotNull('warehouse_id')->cursorPaginate(20);
+        $data = $request->validated();
+        $orders = Order::merchantId($data['merchant_id'])->orderStatus(2)->whereNotNull('warehouse_id')->cursorPaginate(20);
         if (count($orders->items()) === 0) {
             Log::info('No orders found for that merchant.');
             return $this->successResponse('there is no Assign order yet.');
         }
         return OrderResource::collection($orders);
     }
-
+    //done 
     //?-----------------------------------------------------------------------------------------------------------------------
 
     // for support admin
@@ -198,31 +204,37 @@ class AdminController extends BaseController
 
     public function replyToComplaint(ReplieComplaintRequest $request, $complaintId)
     {
+
         try {
+
             $data = $request->validated();
-            $complaint = Complaint::id($complaintId)->complainStatus(ComplaintStatus::Open->value)->firstOrFail();
+
+            $complaint = Complaint::id($complaintId)
+                ->complainStatus(ComplaintStatus::Open->value)
+                ->firstOrFail();
+
             $reply = ComplaintReply::create([
                 'complaint_id' => $complaint->id,
-                'replier_id' => Auth::user()->admin->id,
-                'replier_type' => get_class(Auth::user()->admin),
-                'message' => $request->validated('message')
+                // 'replier_id' => $admin->id,
+                // 'replier_type' => get_class($admin),
+                'message' => $data['message'],
             ]);
 
             $complaint->update(['status' => ComplaintStatus::InProgress->value]);
 
-
             Log::info('Complaint Reply', [
-                'admin_id' => Auth::user()->admin->id,
+                'admin_id' => $admin->id ?? 'null',
                 'complaint_id' => $complaint->id,
             ]);
-            return $this->successResponse('reply Successfully', null, 202);
+
+            return $this->successResponse('Reply successfully submitted.', null, 202);
         } catch (ModelNotFoundException) {
             Log::warning('Complaint not found', [
                 'complaint_id' => $complaintId,
-                'admin_id' => Auth::user()->admin->id
+                'admin_id' => $admin->id ?? 'null',
             ]);
 
-            return $this->errorResponse('Complaint not found', null, 404);
+            return $this->errorResponse('Complaint not found.', null, 404);
         }
     }
 
@@ -317,6 +329,18 @@ class AdminController extends BaseController
     }
 
 
+    public function getAllCancelOrder()
+    {
+        // $data = $request->validated();
+        $orders = Order::orderStatus(6)
+            ->latest()
+            ->paginate(20);
+        if ($orders->isEmpty()) {
+            return $this->errorResponse('There is no Cancel Orders in ', null, 404);
+        }
+        return $this->successResponse("Orders Cancel is {$orders->count()}", [OrderResource::collection($orders)]);
+    }
+
     public function AssignFailedOrderToDeliveryCompany(VaildateDeliveryCompanyRequest $request, $orderId)
     {
         try {
@@ -406,5 +430,98 @@ class AdminController extends BaseController
             "Order logs retrieved successfully. Total: " . $orderLogs->total(),
             $orderLogs
         );
+    }
+
+
+    //?-----------------------------------------------------------------------------------------------------------------------
+
+
+    //? for main Admin 
+    public function addDeliveryCompany(AddDeliveryCompanyRequest $request)
+    { //! Admin from main 
+        $data = $request->validated();
+        $DeliveryCompany = DeliveryCompany::create($data);
+        Log::info('delivery company Added successfully.');
+        return $this->successResponse('Delivery Company Added Successfully', new DeliveryCompanyResource($DeliveryCompany));
+    }
+
+
+    public function updateDeliveryCompany(UpdateDeliveryCompanyWarehouseRequest $request, $DeliveryCompanyId)
+    { //! Admin from main
+        $data = $request->validated();
+        try {
+            $DeliveryCompany = DeliveryCompany::findorFail($DeliveryCompanyId);
+            $updated = $DeliveryCompany->update($data);
+            if (!$updated) {
+                return $this->errorResponse('No changes detected or update failed.', null, 422);
+            }
+            $DeliveryCompany->refresh();
+            Log::info('delivery company with Id:' . $DeliveryCompanyId . 'updated successfully.');
+            return $this->successResponse('Update Delivery Company Successfully', $DeliveryCompany);
+        } catch (ModelNotFoundException) {
+            Log::warning('delivery company not found.');
+            return $this->errorResponse('Delivery company not found.', 404);
+        } catch (\Exception $e) {
+            Log::error('Erorr updated delivery company with Id:' . $DeliveryCompanyId);
+            return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
+        }
+    }
+
+
+    public function destroyDeliveryCompany($DeliveryCompanyId)
+    { //!  Admin from main
+        try {
+            $DeliveryCompany = DeliveryCompany::findOrFail($DeliveryCompanyId);
+            $DeliveryCompany->delete();
+            Log::info('delivery company with deleted successfully.');
+            return $this->successResponse('Delivery Company has been deleted.');
+        } catch (ModelNotFoundException) {
+            Log::warning('delivery company not found.');
+            return $this->errorResponse('Delivery Company not found or already deleted.', null, 404);
+        } catch (\Exception $e) {
+            Log::error('Erorr deleted delivery company with Id:' . $DeliveryCompanyId);
+            return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);
+        }
+    }
+
+
+    public function getAllDeliveryCompany()
+    { //! Admin from main
+        $DeliveryCompanies = DeliveryCompany::paginate(20);
+        if ($DeliveryCompanies->isEmpty()) {
+            return $this->errorResponse('no delivery compaines found', null, 404);
+        }
+        return $this->successResponse('Delivery Companies count:' . $DeliveryCompanies->total(), [DeliveryCompanyResource::collection($DeliveryCompanies)]);
+    }
+
+
+    public function getDeliveryCompany($DeliveryCompanyId)
+    { //! Admin from main
+        try {
+            $DeliveryCompany = DeliveryCompany::where('id', $DeliveryCompanyId)->firstOrFail();
+            return new DeliveryCompanyResource($DeliveryCompany);
+        } catch (ModelNotFoundException) {
+            return $this->errorResponse('Delivery Company Not Found.', null, 404);
+        }
+    }
+
+
+    public function deliveryCompaniesByGovernorate($governorate)
+    { //! Admin from main
+        $allowedGovernorates = array_column(Governorate::cases(), 'value');
+        validator(['governorate' => $governorate], [
+            'governorate' => ['required', Rule::in($allowedGovernorates)]
+        ])->validate();
+        $companies = DeliveryCompany::where('governorate', $governorate)
+            ->get();
+        return DeliveryCompanyResource::collection($companies);
+    }
+
+
+    public function deliveryCompaniesByStatus($status)
+    { //! Admin from main
+        $companies = DeliveryCompany::where('status', $status)
+            ->get();
+        return DeliveryCompanyResource::collection($companies);
     }
 }

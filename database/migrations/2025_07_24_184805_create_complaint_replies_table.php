@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('complaint_replies', function (Blueprint $table) {
             $table->id();
             $table->foreignId('complaint_id')->constrained('complaints')->cascadeOnDelete();
-            $table->morphs('replier');
+            $table->uuidMorphs('replier');
             $table->text('message');
 
             $table->timestamps();

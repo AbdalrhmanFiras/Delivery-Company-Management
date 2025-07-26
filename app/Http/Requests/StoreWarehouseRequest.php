@@ -31,7 +31,6 @@ class StoreWarehouseRequest extends FormRequest
                 'nullable',
                 Rule::in(array_column(Governorate::cases(), 'value'))
             ],
-            'merchant_id' => 'required|exists:merchants,id'
         ];
     }
 }

@@ -37,9 +37,13 @@ class OrderController extends BaseController
             if ($customer) {
                 $customerId = $customer->id;
             }
+
+            if (!Warehouse::where('id', $data['warehouse_id'])->merchantId($merchantId)->exists()) {
+                return $this->errorResponse('Warehouse not found', null, 404);
+            }
+
             $order = Order::create([
                 'merchant_id' => $merchantId,
-                'merchant_id' => $data['merchant_id'],
                 'total_price' => $data['total_price'],
                 'customer_id' => $customerId ?? null,
                 'customer_name' => $data['customer_name'],
@@ -118,49 +122,27 @@ class OrderController extends BaseController
     }
 
 
-    public function assignOrder(AssignWarehouseRequest $request, $orderId)
-    {
-        $data = $request->validated();
-        $exists = Order::id($orderId)->orderStatus(2)->forCompanyId($data['delivery_company_id'])
-            ->warehouseId($data['warehouse_id'])->exists();
-        if ($exists) {
-            return response()->json('This order has already been assigned to this delivery company.', 400);
-        }
-        try {
-            $order = Order::id($orderId)->orderStatus(1)->warehouseId($data['warehouse_id'])->firstOrFail();
-            $order->status = OrderStatus::AssignedDeliveryCompany->value;
-            $order->delivery_company_id = $data['delivery_company_id'];
-            $order->save();
-            $this->logOrderChange($order, 'order_assign_to_delivery_company');
-
-            return $this->successResponse('Order has been Assiged to Delivery Company.');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
-        }
-    }
-
-
     public function getAllOrder()
     { //! merchant,admin
         $merchantId = Auth::user()->merchant->id;
+
         Log::info("merchant {$merchantId} get All his orders");
-        $orders = Order::merchantId($merchantId)->latest()->paginate();
+        $orders = Order::merchantId($merchantId)->latest()->paginate(20);
         return $this->successResponse('', [OrderResource::collection($orders)]);
     }
 
 
-    public function getAllCancelOrder(ValidateWarehouseRequest $request)
+    public function getAllCancelOrder()
     { //! merchant,admin
-        $data = $request->validated();
+        // $data = $request->validated();
         $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
+        $warehouse = Warehouse::merchantId($merchantId)->value('name');
         $orders = Order::orderStatus(6)
             ->merchantId($merchantId)
-            ->warehouseId($data['warehouse_id'])
             ->latest()
             ->paginate(20);
         if ($orders->isEmpty()) {
-            return $this->errorResponse('There is no Cancel Orders in ' . $warehouse, null, 404);
+            return $this->errorResponse('There is no Cancel Orders in ', null, 404);
         }
         Log::info("merchant {$merchantId} get All his Cancel orders");
         return $this->successResponse("Orders Cancel is {$orders->count()}", [OrderResource::collection($orders)]);
@@ -186,6 +168,27 @@ class OrderController extends BaseController
             ->orderStatus(6)
             ->count();
         Log::info("merchant {$merchantId} get Summary from {$warehouse}");
+
+        return response()->json([
+            'total_orders'     => $totalOrders,
+            'delivered_orders' => $deliveredOrders,
+            'cancelled_orders' => $cancelledOrders,
+        ]);
+    }
+    public function getSummaryAll()
+    {
+        $merchantId = Auth::user()->merchant->id;
+        $totalOrders = Order::merchantId($merchantId)
+            ->count();
+
+        $deliveredOrders = Order::merchantId($merchantId)
+            ->orderStatus(5)
+            ->count();
+
+        $cancelledOrders = Order::merchantId($merchantId)
+            ->orderStatus(6)
+            ->count();
+        Log::info("merchant {$merchantId} get Summary of All orders");
 
         return response()->json([
             'total_orders'     => $totalOrders,
@@ -220,11 +223,7 @@ class OrderController extends BaseController
 
             return $this->errorResponse('This order not found.', null, 404);
         } catch (\Exception $e) {
-            Log::error('Unexpected error while fetching cancelled order', [
-                'merchant_id' => $merchantId,
-                'order_id' => $orderId,
-                'error' => $e->getMessage()
-            ]);
+            Log::error('Unexpected error while fetching cancelled order', ['error' => $e->getMessage()]);
 
             return $this->errorResponse('An error occurred. Please try again later.', null, 500);
         }
@@ -252,6 +251,38 @@ class OrderController extends BaseController
             return $this->errorResponse('There is no deliverd Orders for ' . $warehouse, null, 404);
         }
         Log::info("merchant {$merchantId} get All his Delivered orders from {$warehouse}.");
+        return $this->successResponse("Delivered orders for {$warehouse}.", [
+            'orders' => OrderResource::collection($orders)
+        ]);
+    }
+
+
+    public function getCancelddWarehouse(ValidateWarehouseRequest $request)
+    {
+        $data = $request->validated();
+        $merchantId = Auth::user()->merchant->id;
+        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
+        $orders = Order::merchantId($merchantId)->warehouseId($data['warehouse_id'])->orderStatus(6)->latest()->paginate(20);
+        if ($orders->isEmpty()) {
+            return $this->errorResponse('There is no cancel Orders for ' . $warehouse, null, 404);
+        }
+        Log::info("merchant {$merchantId} get All his Cancel orders from {$warehouse}.");
+        return $this->successResponse("Delivered orders for {$warehouse}.", [
+            'orders' => OrderResource::collection($orders)
+        ]);
+    }
+
+
+    public function getlatestWarehouse(ValidateWarehouseRequest $request)
+    {
+        $data = $request->validated();
+        $merchantId = Auth::user()->merchant->id;
+        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
+        $orders = Order::merchantId($merchantId)->warehouseId($data['warehouse_id'])->latest()->paginate(20);
+        if ($orders->isEmpty()) {
+            return $this->errorResponse('There is no latest Orders for ' . $warehouse, null, 404);
+        }
+        Log::info("merchant {$merchantId} get All his latest orders from {$warehouse}.");
         return $this->successResponse("Delivered orders for {$warehouse}.", [
             'orders' => OrderResource::collection($orders)
         ]);
@@ -306,21 +337,21 @@ class OrderController extends BaseController
         $merchantId = $user->merchant->id ?? null;
 
         if ($merchantId) {
-            Log::info("Merchant (user_id: {$user->id}, merchant_id: {$merchantId}) is attempting to {$action}" . ($resourceId ? " on resource {$resourceId}" : '') . '.');
+            Log::info("Merchant (user_id: {$user->id}, merchant_id: {$merchantId}) is attempting to {$action}");
             return $merchantId;
         }
 
         if ($user->hasRole('admin')) {
-            Log::info("Admin (user_id: {$user->id}) is attempting to {$action}" . ($resourceId ? " on resource {$resourceId}" : '') . '.');
+            Log::info("Admin (user_id: {$user->id}) is attempting to {$action}");
             return null;
         }
 
         if ($user->hasRole('supportadmin')) {
-            Log::info("Support Admin (user_id: {$user->id}) is attempting to {$action}" . ($resourceId ? " on resource {$resourceId}" : '') . '.');
+            Log::info("Support Admin (user_id: {$user->id}) is attempting to {$action}");
             return null;
         }
 
-        Log::warning("Unauthorized user (user_id: {$user->id}) tried to {$action}" . ($resourceId ? " on resource {$resourceId}" : '') . '.');
+        Log::warning("Unauthorized user (user_id: {$user->id}) tried to {$action}");
         throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Unauthorized.');
     }
 }

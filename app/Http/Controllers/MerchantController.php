@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Warehouse;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Traits\LogsOrderChanges;
@@ -15,9 +16,13 @@ use App\Http\Resources\OrderResource;
 use App\Jobs\SendAllNotSentOrdersJob;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Resources\MerchantResource;
+use App\Http\Resources\WarehouseResource;
 use App\Http\Resources\StoreOrderResource;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\AssignWarehouseRequest;
+use App\Http\Requests\UpdateWarehouseRequest;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class MerchantController extends BaseController
 {
@@ -31,57 +36,57 @@ class MerchantController extends BaseController
         );
     }
 
-    // public function sendToWarehouse(Request $request, $orderId)
-    // {
-    //     $merchantId = Auth::user()->merchant->id;
-    //     Log::info("Merchant is sending order #{$orderId} to warehouse.");
-    //     $check = Order::Id($orderId)->merchantId($merchantId)->where('upload', Order::STATUS_SENT)->first();
-    //     if ($check) {
-    //         return response()->json('This order was already sent to the warehouse.');
-    //     }
-    //     try {
-    //         DB::beginTransaction();
-    //         $order = Order::Id($orderId)
-    //             ->merchantId($merchantId)
-    //             ->orderStatus(0)
-    //             ->firstOrFail();
-    //         $order->status = OrderStatus::AtWarehouse->value;
-    //         $order->upload = Order::STATUS_SENT;
-    //         $order->warehouse_id = $order->merchant->warehouse_id;
-    //         $order->save();
-    //         DB::commit();
-    //         $this->logOrderChange($order, 'order_status_update');
-    //         Log::info("Order #{$orderId} marked as AtWarehouse.");
 
-    //         return $this->successResponse('Order sent to warehouse successfully.');
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         Log::error("Error sending order #{$orderId}: {$e->getMessage()}");
-
-    //         return $this->errorResponse('Unexpected error.', ['error' => $e->getMessage()]);
-    //     }
-    // }
+    public function store(StoreWarehouseRequest $request)
+    { //! merchant , super admin
+        $merchantId = Auth::user()->merchant->id;
+        $data = $request->validated();
+        $data['merchant_id'] = $merchantId;
+        $warehouse = Warehouse::create($data);
+        Log::info('warehouse Add successfuly by' . $merchantId);
+        return $this->successResponse('Wahreouse Add successfully.', [new WarehouseResource($warehouse)], 202);
+    }
 
 
-    // public function sentAllToWarehouse()
-    // { // php artisan queue:work
-    //     Log::info("Dispatching SendAllNotSentOrdersJob to process all not sent orders.");
-    //     dispatch(new SendAllNotSentOrdersJob());
-    //     return $this->successResponse('All Order Are Sent.');
-    // }
+    public function update(UpdateWarehouseRequest $request, $warehouseId)
+    { //! merchant , super admin
+        try {
+            $merchantId = Auth::user()->merchant->id;
+            $data = $request->validated();
+            $warehouse = Warehouse::where('warehouse_id', $warehouseId)->merchantId($merchantId)->firstOrFail();
+            $updated = $warehouse->update($data);
+            if (!$updated) {
+                Log::warning("Warehouse update failed or no changes made. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
+                return $this->errorResponse('No changes detected or update failed.', null, 422);
+            }
+            Log::info("Warehouse updated successfully. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}", ['updated_fields' => $data]);
+
+            return response()->json(new WarehouseResource($warehouse));
+        } catch (ModelNotFoundException) {
+            Log::warning("Warehouse not found. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
+            return $this->errorResponse('Warehouse not found.', null, 404);
+        }
+    }
 
 
-    // public function delete($orderId)
-    // {
-    //     $merchantId = Auth::user()->merchant->id;
-    //     Log::info("Attempting to delete not sent order #{$orderId}.");
-    //     $order = Order::Id($orderId)->merchantId($merchantId)->where('status', Order::STATUS_NOT_SENT)->first();
-    //     if (!$order) {
-    //         return $this->errorResponse('Order does not exist or has already been sent.');
-    //         Log::error("order not found with ID {$orderId} ");
-    //     }
-    //     Log::info("Order #{$orderId} soft deleted successfully.");
-    //     $order->delete();
-    //     return $this->successResponse('Order Deleted Successfuly.');
-    // }
+    public function destroy($warehouseId)
+    { //! merchant, , super admin
+        try {
+            $merchantId = Auth::user()->merchant->id;
+            $warehouse = Warehouse::where('id', $warehouseId)
+                ->merchantId($merchantId)
+                ->firstOrFail();
+
+            $warehouse->delete();
+            Log::info("Warehouse deleted successfully. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
+
+            return $this->successResponse('Warehouse deleted successfully.');
+        } catch (ModelNotFoundException) {
+            Log::warning("Attempt to delete non-existent warehouse. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
+            return $this->errorResponse('Warehouse not found.', null, 404);
+        } catch (\Exception $e) {
+            Log::error("Error deleting warehouse. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId},Error: {$e->getMessage()}");
+            return $this->errorResponse('Failed to delete warehouse.', ['error' => $e->getMessage()], 500);
+        }
+    }
 }

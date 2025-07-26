@@ -12,10 +12,6 @@ class Merchant extends Model
     use HasUuids;
     protected $guarded = ['id'];
 
-    // public function customers()
-    // {
-    //     return $this->hasMany(Customer::class);
-    // }
 
     public function users(): BelongsTo
     {

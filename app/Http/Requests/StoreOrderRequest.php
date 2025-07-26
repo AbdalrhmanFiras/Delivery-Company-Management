@@ -22,7 +22,6 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'merchant_id' => 'required|uuid|exists:merchants,id',
             'customer_name' => 'required|string',
             'customer_phone' => 'required|string|min:11',
             'customer_address' => 'required|string',

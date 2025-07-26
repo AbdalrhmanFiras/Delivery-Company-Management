@@ -10,6 +10,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('logs:clean-old')->everyFifteenDays()->at('03:00');
+        $schedule->command('model:prune')->daily();
     }
     protected function commands()
     {

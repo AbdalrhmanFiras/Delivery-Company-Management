@@ -72,6 +72,7 @@ class DeliveryCompanyController extends BaseController
         ]);
     }
 
+
     public function getAvgDrivers()
     {
         $CompanyId = Auth::user()->employee->delivery_company_id;
@@ -171,7 +172,7 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getDriverSummery($driverID)
+    public function getDriverSummary($driverID)
     {
         $CompanyId = Auth::user()->employee->delivery_company_id;
         $driverID = Driver::where('id', $driverID)->value('id');

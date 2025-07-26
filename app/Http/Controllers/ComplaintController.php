@@ -23,9 +23,11 @@ class ComplaintController extends BaseController
     {
         $data = $request->validated();
         $order = Order::find($data['order_id']);
-        if (Auth::check() && Auth::user()->customer) {
-            $data['customer_id'] = Auth::user()->customer->id;
+        if (!$order) {
+            return $this->errorResponse('Order not found.', null, 404);
         }
+        $customer = Auth::guard('customer')->user();
+        $data['customer_id'] = $customer->id;
         $complaint = Complaint::create($data);
         $complaint->load(['order' => function ($query) {
             $query->select('id', 'merchant_id', 'warehouse_id', 'delivery_company_id');
@@ -60,7 +62,7 @@ class ComplaintController extends BaseController
     {
         try {
             $data = $request->validated();
-            $customerId = Auth::user()->customer->id;
+            $customerId = Auth::guard('customer')->user()->id;
             $complaint = Complaint::id($complaintId)->customerId($customerId)->firstOrFail();
             $complaint->update($data);
             return $this->successResponse('your Complaint updated successfully.');
@@ -73,7 +75,7 @@ class ComplaintController extends BaseController
 
     public function show($complaintId)
     {
-        $customerId = Auth::user()->customer->id;
+        $customerId = Auth::guard('customer')->user()->id;
         $complaint = Complaint::id($complaintId)->customerId($customerId)->firstOrFail();
         if (!$complaint) {
             return $this->errorResponse('Complaints not found', null, 404);
@@ -87,7 +89,7 @@ class ComplaintController extends BaseController
 
     public function index()
     {
-        $customerId = Auth::user()->customer->id;
+        $customerId = Auth::guard('customer')->user()->id;
         $complaints = Complaint::customerId($customerId)->latest()->paginate(10);
         if (empty($complaints->items())) {
             return $this->errorResponse('there is no complaints', null, 404);
@@ -96,9 +98,9 @@ class ComplaintController extends BaseController
     }
 
 
-    public function delete($complaintId)
+    public function destroy($complaintId)
     {
-        $customerId = Auth::user()->customer->id;
+        $customerId = Auth::guard('customer')->user()->id;
         $complaint = Complaint::id($complaintId)->customerId($customerId)->firstOrFail();
         if (!$complaint) {
             return $this->errorResponse('Complaints not found', null, 404);

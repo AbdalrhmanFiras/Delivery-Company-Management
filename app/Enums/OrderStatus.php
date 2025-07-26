@@ -10,7 +10,6 @@ enum OrderStatus: int
     case OutForDelivery = 4; //done
     case Delivered = 5; //done
     case Cancelled = 6;
-    case Late = 7; // remove later
     case Stuck = 8;
     case FailedDelivery = 9;
 

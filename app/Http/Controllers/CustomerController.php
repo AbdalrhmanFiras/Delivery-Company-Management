@@ -33,6 +33,13 @@ class CustomerController extends BaseController
     public function login(CustomerLoginRequest $request)
     {
         $data = $request->validated();
+        $user = Auth::user();
+        if ($user && $user->customer && $user->customer->phone === $data['phone']) {
+            return $this->successResponse('You are already logged in.', [
+                'token' => JWTAuth::fromUser($user->customer),
+            ]);
+        }
+
         $customer = Customer::where('phone', $data['phone'])->first();
         // if (Auth::guard('api')->check()) {
         //     return $this->successResponse('You are already logged in.');
@@ -52,6 +59,11 @@ class CustomerController extends BaseController
                 'customer_address' => $order->customer_address,
             ]);
         }
+
+        if ($customer->is_verified) {
+            $token = JWTAuth::fromUser($customer);
+            return $this->successResponse('You are already verified.', ['token' => $token]);
+        }
         if (RateLimiter::tooManyAttempts('otp:' . $data['phone'], 4)) {
             return $this->errorResponse('Too many OTP requests. Try again later.', null, 429);
         }
@@ -66,6 +78,12 @@ class CustomerController extends BaseController
     {
         $data = $request->validated();
 
+        $user = Auth::user();
+        if ($user && $user->customer && $user->customer->phone === $data['phone']) {
+            return $this->successResponse('You are already logged in.', [
+                'token' => JWTAuth::fromUser($user->customer),
+            ]);
+        }
         $customer = Customer::where('phone', $data['phone'])->first();
         if (!$customer) {
             $order = Order::where('customer_phone', $data['phone'])
@@ -85,6 +103,10 @@ class CustomerController extends BaseController
                     'customer_address' => $data['customer_address'] ?? null,
                 ]);
             }
+        }
+        if ($customer->is_verified) {
+            $token = JWTAuth::fromUser($customer);
+            return $this->successResponse('You are already verified.', ['token' => $token]);
         }
 
         if (RateLimiter::tooManyAttempts('otp:' . $data['phone'], 4)) {
@@ -133,9 +155,9 @@ class CustomerController extends BaseController
 
     public function trackOrder(CustomerOrderTrackrRequest $request)
     {
+        $phone = Auth::guard('customer')->user()->phone;
         $data = $request->validated();
         $order = Order::where('tracking_number', $data['tracking_number'])
-            ->phone($data['phone'])
             ->first();
 
         if (!$order) {
@@ -147,7 +169,7 @@ class CustomerController extends BaseController
 
     public function cancelOrder($orderId)
     {
-        $customer = Auth::user()->customer;
+        $customer = Auth::guard('customer')->user();
         $order = Order::id($orderId)->phone($customer->phone)
             ->where('status', [OrderStatus::AtWarehouse->value])
             ->first();
@@ -160,7 +182,11 @@ class CustomerController extends BaseController
 
     public function getOrders()
     {
-        $phone = Auth::user()->customer->phone;
+        $phone = Auth::guard('customer')->user()->phone;
+        $customer = Auth::guard('customer')->user();
+        if (!$customer) {
+            return $this->errorResponse('Customer not found.', null, 404);
+        }
         $orders = Order::phone($phone)
             ->latest()->paginate(10);
 
@@ -173,7 +199,7 @@ class CustomerController extends BaseController
 
     public function getCompeleteOrders()
     {
-        $phone = Auth::user()->customer->phone;
+        $phone = Auth::guard('customer')->user()->phone;
         $orders = Order::orderStatus(5)
             ->phone($phone)
             ->latest()->paginate(10);
@@ -186,7 +212,7 @@ class CustomerController extends BaseController
 
     public function submitFeedback(SubmitFeedbackRequest $request)
     {
-        $phone = Auth::user()->customer->phone;
+        $phone = Auth::guard('customer')->user()->phone;
         $data = $request->validated();
         try {
             $order = Order::where('tracking_number', $data['tracking_number'])

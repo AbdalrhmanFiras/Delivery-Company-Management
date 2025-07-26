@@ -27,7 +27,6 @@ class Order extends Model
 
     public function scopeOrderfilters($query, $filters)
     {
-
         return $query->when($filters['delivery_company_id'] ?? null, fn($q, $id) => $q->forCompanyId($id))
             ->when($filters['status'] ?? null, fn($q, $s) => $q->orderStatus($s));
     }
@@ -123,9 +122,15 @@ class Order extends Model
 
     public function prunable()
     {
-        return static::where('status',  OrderStatus::Cancelled->value)
-            ->where('updated_at', '<', now()->subMonths(6));
+        return static::where(function ($query) {
+            $query->where('status', OrderStatus::Cancelled->value)
+                ->where('updated_at', '<', now()->subMonths(6));
+        })->orWhere(function ($query) {
+            $query->where('status', OrderStatus::FailedDelivery->value)
+                ->where('updated_at', '<', now()->subMonths(1));
+        });
     }
+
 
 
     protected static function boot()

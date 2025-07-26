@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CustomerOrderTrackrRequest extends FormRequest
+class VaildateMerchantRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,7 @@ class CustomerOrderTrackrRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tracking_number' => 'required|string|exists:orders,tracking_number',
+            'merchant_id' => 'required|uuid|exists:merchants,id'
         ];
     }
 }

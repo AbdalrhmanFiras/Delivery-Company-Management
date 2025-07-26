@@ -16,7 +16,7 @@ class OrderlogController extends BaseController
             $query = OrderLog::where('merchant_id', $merchantId)->firstOrFail();
             $logs = $query->orderByDesc('created_at')->paginate(20);
             return OrderLogResource::collection($logs);
-        } catch (ModelNotFoundException $e) {
+        } catch (ModelNotFoundException) {
             return $this->errorResponse('There is no merchant like this', null, 404);
         }
     }

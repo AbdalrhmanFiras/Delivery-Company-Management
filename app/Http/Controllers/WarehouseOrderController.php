@@ -93,7 +93,7 @@ class WarehouseOrderController extends BaseController
 
 
     // public function receiveAllMerchantOrdersAuto($merchantId)
-    // { //?
+    // { 
     //     try {
     //         $warehouseId = Auth::user()->employee->warehouse_id;
     //         $merchant = Merchant::findOrFail($merchantId);
