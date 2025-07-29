@@ -7,7 +7,7 @@ use App\Models\Merchant;
 use App\Models\Warehouse;
 use App\Models\WarehouseReceipts;
 use Illuminate\Bus\Queueable;
-use Illuminate\Foundation\Bus\Dispatchable; // this is needed
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;

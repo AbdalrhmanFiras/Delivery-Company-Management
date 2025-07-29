@@ -30,7 +30,9 @@ class AuthController extends BaseController
 
         try {
             $user = $this->createUser($data);
-            $profile = $this->createProfile($request, $user);
+            $user->assignRole($data['user_type']);
+            $model = $this->createModel($request, $user);
+
 
             DB::commit();
             return $this->successResponse(
@@ -44,7 +46,7 @@ class AuthController extends BaseController
             DB::rollback();
             return $this->errorResponse(
                 'Registration failed',
-                config('app.debug') ? $e->getMessage() : 'An error occurred during registration',
+                [$e->getMessage()],
                 500
             );
         }
@@ -64,7 +66,7 @@ class AuthController extends BaseController
         }
 
         $user = User::where('email', $data['email'])->first();
-        $status = $this->getUserProfileStatus($user);
+        $status = $this->getUsertype($user);
 
 
         return $this->successResponse(
@@ -88,7 +90,7 @@ class AuthController extends BaseController
     }
 
 
-    private function getUserProfileStatus(User $user)
+    private function getUsertype(User $user)
     {
         switch ($user->user_type) {
             case 'merchant':
@@ -101,6 +103,8 @@ class AuthController extends BaseController
                 return null;
         }
     }
+
+
     private function createUser(array $data)
     {
         $data['password'] = Hash::make($data['password']);
@@ -108,6 +112,7 @@ class AuthController extends BaseController
 
         return User::create($data);
     }
+
 
     private function getStatus($user_type)
     {
@@ -119,31 +124,31 @@ class AuthController extends BaseController
         };
     }
 
-    private function createProfile(RegisterRequest $request, User $user)
+
+    private function createModel(RegisterRequest $request, User $user)
     {
         return match ($request->user_type) {
-            'driver' => $this->createDriverProfile($user, $request),
-            'merchant' => $this->createMerchantProfile($user, $request),
-            'employee' => $this->createEmployeeProfile($user, $request),
+            'driver' => $this->createDriver($user, $request),
+            'merchant' => $this->createMerchant($user, $request),
+            'employee' => $this->createEmployee($user, $request),
 
             default => null,
         };
     }
 
 
-    private function createDriverProfile(User $user, RegisterRequest $request)
+    private function createDriver(User $user, RegisterRequest $request)
     {
         return Driver::create([
             'user_id' => $user->id,
             'phone' => $request->phone,
-
             'vehicle_number' => $request->vehicle_number,
             'delivery_company_id' => $request->delivery_company_id,
         ]);
     }
 
 
-    private function createEmployeeProfile(User $user, RegisterRequest $request)
+    private function createEmployee(User $user, RegisterRequest $request)
     {
         return Employee::create([
             'name' => $request->name,
@@ -159,7 +164,7 @@ class AuthController extends BaseController
     }
 
 
-    private function createMerchantProfile(User $user, RegisterRequest $request)
+    private function createMerchant(User $user, RegisterRequest $request)
     {
         $licensePath = null;
         if ($request->hasFile('business_license')) {

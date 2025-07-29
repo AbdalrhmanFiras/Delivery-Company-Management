@@ -103,6 +103,10 @@ class DeliveryCompanyOrderController extends BaseController
                 ->forCompanyId($companyId)
                 ->orderStatus(2)
                 ->firstOrFail();
+            if ($order->status = OrderStatus::AssignedDriver->value) {
+                return $this->errorResponse('Order aleady been assign', null, 409);
+            }
+
             event(new AutoAssignDriverEvent($order));
         } catch (ModelNotFoundException) {
             Log::error("order not found with ID {$orderId} ");

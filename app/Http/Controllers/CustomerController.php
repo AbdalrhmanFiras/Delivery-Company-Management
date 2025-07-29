@@ -24,6 +24,7 @@ use Illuminate\Queue\Middleware\RateLimited;
 use App\Http\Resources\CustomerOrderResource;
 use App\Http\Requests\CustomerVerifyOtpRequest;
 use App\Http\Requests\CustomerOrderTrackrRequest;
+use App\Models\ComplaintReply;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CustomerController extends BaseController
@@ -64,12 +65,12 @@ class CustomerController extends BaseController
             $token = JWTAuth::fromUser($customer);
             return $this->successResponse('You are already verified.', ['token' => $token]);
         }
+        $customer->assignRole('customer');
         if (RateLimiter::tooManyAttempts('otp:' . $data['phone'], 4)) {
             return $this->errorResponse('Too many OTP requests. Try again later.', null, 429);
         }
         RateLimiter::hit('otp:' . $data['phone'], 60);
         event(new CustomerOtpLogin($customer));
-
         return $this->successResponse('OTP sent to your phone.');
     }
 
@@ -102,6 +103,7 @@ class CustomerController extends BaseController
                     'name' => $data['name'] ?? 'New Customer',
                     'customer_address' => $data['customer_address'] ?? null,
                 ]);
+                $customer->assignRole('customer');
             }
         }
         if ($customer->is_verified) {
@@ -174,10 +176,10 @@ class CustomerController extends BaseController
             ->where('status', [OrderStatus::AtWarehouse->value])
             ->first();
         if (!$order) {
-            return $this->errorResponse('Order not found or cannot be canceled.', null, 404);
+            return $this->errorResponse('Order not found or cannot be cancelled.', null, 404);
         }
         $order->update(['status' => OrderStatus::Cancelled->value]);
-        return $this->successResponse('Order has been canceled successfully.');
+        return $this->successResponse('Order has been cancelled successfully.');
     }
 
     public function getOrders()
@@ -240,5 +242,16 @@ class CustomerController extends BaseController
         } catch (ModelNotFoundException) {
             return $this->errorResponse('Order is not found.', null, 404);
         }
+    }
+
+    public function getResponse($complaintId)
+    {
+        if (!ComplaintReply::where('complaint_id', $complaintId)->exists()) {
+            return $this->errorResponse('there is no response yet', null, 404);
+        }
+
+        $replies = ComplaintReply::where('complaint_id', $complaintId)->get();
+
+        return response()->json($replies, 200);
     }
 }

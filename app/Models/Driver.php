@@ -11,6 +11,7 @@ class Driver extends Model
 {
     use HasUuids, SoftDeletes;
 
+
     protected $guarded = ['id'];
 
 

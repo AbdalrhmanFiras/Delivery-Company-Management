@@ -13,13 +13,13 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasApiTokens, HasUuids, CanReplyToComplaint;
+    use HasFactory, Notifiable, HasApiTokens, HasUuids, CanReplyToComplaint, HasRoles;
 
-
+    protected $guard_name = 'api';
 
     public function getJWTIdentifier()
     {

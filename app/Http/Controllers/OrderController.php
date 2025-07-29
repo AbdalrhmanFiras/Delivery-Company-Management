@@ -111,6 +111,9 @@ class OrderController extends BaseController
                 ->merchantId($merchantId)
                 ->firstOrFail();
 
+            if ($order->status !== OrderStatus::Cancelled->value) {
+                return $this->errorResponse('Only cancelled orders can be deleted.', null, 403);
+            }
             $this->logOrderChange($order, 'delete_order', $order->toArray());
             Log::info("Order #{$order->id} deleted by merchant {$merchantId}");
             $order->delete();
@@ -149,22 +152,21 @@ class OrderController extends BaseController
     }
 
 
-    public function getSummary(ValidateWarehouseRequest $request)
+    public function getSummary($warehouseId)
     {
-        $data = $request->validated();
         $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::merchantId($merchantId)->where('id', $data['warehouse_id'])->value('name');
+        $warehouse = Warehouse::merchantId($merchantId)->where('id', $warehouseId)->value('name');
         $totalOrders = Order::merchantId($merchantId)
-            ->warehouseId($data['warehouse_id'])
+            ->warehouseId($warehouseId)
             ->count();
 
         $deliveredOrders = Order::merchantId($merchantId)
-            ->warehouseId($data['warehouse_id'])
+            ->warehouseId($warehouseId)
             ->orderStatus(5)
             ->count();
 
         $cancelledOrders = Order::merchantId($merchantId)
-            ->warehouseId($data['warehouse_id'])
+            ->warehouseId($warehouseId)
             ->orderStatus(6)
             ->count();
         Log::info("merchant {$merchantId} get Summary from {$warehouse}");
@@ -241,12 +243,11 @@ class OrderController extends BaseController
     }
 
 
-    public function getDeliveredWarehouse(ValidateWarehouseRequest $request)
+    public function getDeliveredWarehouse($warehouseId)
     {
-        $data = $request->validated();
         $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
-        $orders = Order::merchantId($merchantId)->warehouseId($data['warehouse_id'])->orderStatus(5)->latest()->paginate(20);
+        $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
+        $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(5)->latest()->paginate(20);
         if ($orders->isEmpty()) {
             return $this->errorResponse('There is no deliverd Orders for ' . $warehouse, null, 404);
         }
@@ -257,12 +258,11 @@ class OrderController extends BaseController
     }
 
 
-    public function getCancelddWarehouse(ValidateWarehouseRequest $request)
+    public function getCancelledWarehouse($warehouseId)
     {
-        $data = $request->validated();
         $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
-        $orders = Order::merchantId($merchantId)->warehouseId($data['warehouse_id'])->orderStatus(6)->latest()->paginate(20);
+        $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
+        $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(6)->latest()->paginate(20);
         if ($orders->isEmpty()) {
             return $this->errorResponse('There is no cancel Orders for ' . $warehouse, null, 404);
         }
@@ -272,21 +272,6 @@ class OrderController extends BaseController
         ]);
     }
 
-
-    public function getlatestWarehouse(ValidateWarehouseRequest $request)
-    {
-        $data = $request->validated();
-        $merchantId = Auth::user()->merchant->id;
-        $warehouse = Warehouse::id($data['warehouse_id'])->merchantId($merchantId)->value('name');
-        $orders = Order::merchantId($merchantId)->warehouseId($data['warehouse_id'])->latest()->paginate(20);
-        if ($orders->isEmpty()) {
-            return $this->errorResponse('There is no latest Orders for ' . $warehouse, null, 404);
-        }
-        Log::info("merchant {$merchantId} get All his latest orders from {$warehouse}.");
-        return $this->successResponse("Delivered orders for {$warehouse}.", [
-            'orders' => OrderResource::collection($orders)
-        ]);
-    }
 
 
     public function getlatestOrders()

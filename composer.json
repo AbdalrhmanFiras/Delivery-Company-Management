@@ -12,6 +12,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "rap2hpoutre/laravel-log-viewer": "^2.5",
+        "spatie/laravel-permission": "^6.21",
         "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {

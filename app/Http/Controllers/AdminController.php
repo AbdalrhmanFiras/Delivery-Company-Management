@@ -160,6 +160,9 @@ class AdminController extends BaseController
         }
         return OrderResource::collection($orders);
     }
+
+
+
     //done 
     //?-----------------------------------------------------------------------------------------------------------------------
 
@@ -204,11 +207,8 @@ class AdminController extends BaseController
 
     public function replyToComplaint(ReplieComplaintRequest $request, $complaintId)
     {
-
         try {
-
             $data = $request->validated();
-
             $complaint = Complaint::id($complaintId)
                 ->complainStatus(ComplaintStatus::Open->value)
                 ->firstOrFail();
@@ -523,5 +523,16 @@ class AdminController extends BaseController
         $companies = DeliveryCompany::where('status', $status)
             ->get();
         return DeliveryCompanyResource::collection($companies);
+    }
+
+
+    public function getDeliveryComapnySummary($deliveryCompany)
+    {
+        $company = DeliveryCompany::findOrFail($deliveryCompany);
+        return response()->json([
+            'Delivered' => Order::forCompanyId($company->id)->orderStatus(5)->count(),
+            'Cancelled' => Order::forCompanyId($company->id)->orderStatus(6)->count(),
+            'Failed' => Order::forCompanyId($company->id)->orderStatus(9)->count(),
+        ]);
     }
 }

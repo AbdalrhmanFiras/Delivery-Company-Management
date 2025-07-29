@@ -163,7 +163,7 @@ class DriverController extends BaseController
     }
 
 
-    public function getOrderSummery()
+    public function getOrderSummary()
     {
         $driver = Auth::user()->driver;
         $driverId = $driver->id;
