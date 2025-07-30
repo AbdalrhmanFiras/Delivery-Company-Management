@@ -163,6 +163,25 @@ class AdminController extends BaseController
 
 
 
+    public function getOrder($orderId)
+    { // fix it later
+        try {
+            $order = Order::id($orderId)->firstOrFail();
+            return $this->successResponse('Order details.', new OrderResource($order));
+        } catch (ModelNotFoundException) {
+            Log::warning("Order not found", [
+                'user_id' => Auth::id(),
+                'order_id' => $orderId
+            ]);
+            return $this->errorResponse('Order not found.', 404);
+        } catch (\Exception $e) {
+            Log::error("Failed to retrieve order {$orderId}: " . $e->getMessage(), [
+                'user_id' => Auth::id()
+            ]);
+            return $this->errorResponse('Unexpected error occurred.');
+        }
+    }
+
     //done 
     //?-----------------------------------------------------------------------------------------------------------------------
 

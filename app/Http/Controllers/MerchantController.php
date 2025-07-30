@@ -23,37 +23,40 @@ use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\AssignWarehouseRequest;
 use App\Http\Requests\UpdateWarehouseRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Http\Requests\MerchantAccessRequest;
 
 class MerchantController extends BaseController
 {
 
-
-    public function getAllOrder()
-    { //! merchant,
-        $merchantId = Auth::user()->merchant->id;
-        return OrderResource::collection(
-            Order::merchantId($merchantId)->paginate(20)
-        );
-    }
-
+    // public function getAllOrder(MerchantAccessRequest $request)
+    // {
+    //     $merchantId = $request->getMerchantId();
+    //     return OrderResource::collection(
+    //         Order::merchantId($merchantId)->paginate(20)
+    //     );
+    // }
 
     public function store(StoreWarehouseRequest $request)
-    { //! merchant , super admin
-        $merchantId = Auth::user()->merchant->id;
+    { //*
+        $merchantId = $request->getMerchantId();
+
         $data = $request->validated();
         $data['merchant_id'] = $merchantId;
         $warehouse = Warehouse::create($data);
-        Log::info('warehouse Add successfuly by' . $merchantId);
-        return $this->successResponse('Wahreouse Add successfully.', [new WarehouseResource($warehouse)], 202);
+        Log::info('Warehouse added successfully by merchant ID: ' . $merchantId);
+
+        return $this->successResponse('Warehouse added successfully.', [new WarehouseResource($warehouse)], 202);
     }
 
 
+
     public function update(UpdateWarehouseRequest $request, $warehouseId)
-    { //! merchant , super admin
+    { //*
         try {
-            $merchantId = Auth::user()->merchant->id;
+
+            $merchantId = $request->getMerchantId();
             $data = $request->validated();
-            $warehouse = Warehouse::where('warehouse_id', $warehouseId)->merchantId($merchantId)->firstOrFail();
+            $warehouse = Warehouse::where('id', $warehouseId)->merchantId($merchantId)->firstOrFail();
             $updated = $warehouse->update($data);
             if (!$updated) {
                 Log::warning("Warehouse update failed or no changes made. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
@@ -69,23 +72,22 @@ class MerchantController extends BaseController
     }
 
 
-    public function destroy($warehouseId)
-    { //! merchant, , super admin
+    public function destroy(MerchantAccessRequest $request, $warehouseId)
+    { //*
         try {
-            $merchantId = Auth::user()->merchant->id;
+            $merchantId = $request->getMerchantId();
             $warehouse = Warehouse::where('id', $warehouseId)
-                ->merchantId($merchantId)
+                ->where('merchant_id', $merchantId)
                 ->firstOrFail();
-
             $warehouse->delete();
             Log::info("Warehouse deleted successfully. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
 
             return $this->successResponse('Warehouse deleted successfully.');
         } catch (ModelNotFoundException) {
-            Log::warning("Attempt to delete non-existent warehouse. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId}");
+            Log::warning("Attempt to delete non-existent warehouse. Warehouse ID: {$warehouseId}");
             return $this->errorResponse('Warehouse not found.', null, 404);
         } catch (\Exception $e) {
-            Log::error("Error deleting warehouse. Warehouse ID: {$warehouseId}, Merchant ID: {$merchantId},Error: {$e->getMessage()}");
+            Log::error("Error deleting warehouse. Warehouse ID: {$warehouseId}, Error: {$e->getMessage()}");
             return $this->errorResponse('Failed to delete warehouse.', ['error' => $e->getMessage()], 500);
         }
     }

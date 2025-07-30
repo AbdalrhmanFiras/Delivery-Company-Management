@@ -1,11 +1,12 @@
 <?php
 
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\SuperAdminPermission;
+use Spatie\Permission\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\EnsureEmployeeIsDeliveryCompanyEmployee;
-use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
+use App\Http\Middleware\EnsureEmployeeIsDeliveryCompanyEmployee;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'employee.delivery' => EnsureEmployeeIsDeliveryCompanyEmployee::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
+
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -15,6 +15,16 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class EmployeeController extends BaseController
 {
 
+    public function __construct()
+    {
+        $this->middleware(['auth:api', 'role:employee']);
+        $this->middleware('permission:get-employees')->only('index');
+        $this->middleware('permission:get-employee')->only('show');
+        $this->middleware('permission:create-employee')->only('store');
+        $this->middleware('permission:update-employee')->only('update');
+        $this->middleware('permission:delete-employee')->only('destroy');
+    }
+
     public function index()
     {
         $context = $this->getEmployeeType();

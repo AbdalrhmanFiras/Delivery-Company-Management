@@ -19,14 +19,16 @@ use App\Http\Resources\EmpolyeeResource;
 use App\Http\Requests\EmployeeNameRequest;
 use App\Http\Requests\UpdateDriverRequest;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use App\Http\Requests\EmployeeAccessRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeliveryCompanyController extends BaseController
-{ //test role 
+{
 
-    public function getDrivers()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getDrivers(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')
             ->latest()
@@ -39,10 +41,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getAvailableDriver()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-
+    public function getAvailableDriver(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->where('available', 1)
             ->latest()
@@ -55,10 +57,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getBestDrivers()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-
+    public function getBestDrivers(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->where('rating' >= 4)->orderByDesc('rating')
             ->get();
@@ -73,9 +75,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getAvgDrivers()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getAvgDrivers(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $drivers = Driver::forCompanyId($CompanyId)
             ->where('status', 'Active')->whereBetween('rating', [1, 3])->orderByDesc('rating')
             ->get();
@@ -90,9 +93,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getDriver($driverID)
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getDriver(EmployeeAccessRequest $request, $driverID)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         try {
             $driver = Driver::forCompanyId($CompanyId)
                 ->where('status', 'Active')
@@ -108,10 +112,10 @@ class DeliveryCompanyController extends BaseController
 
 
     public function UpdateDriver(UpdateDriverRequest $request, $driverID)
-    {
+    { //*
+        $employeeId = $request->getEmployeeId();
         $data = $request->validated();
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         try {
             $driver = Driver::forCompanyId($CompanyId)
                 ->where('status', 'Active')
@@ -130,9 +134,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function destroyDriver($driverID)
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function destroyDriver(EmployeeAccessRequest $request, $driverID)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         try {
             $driver = Driver::forCompanyId($CompanyId)
                 ->where('id', $driverID)
@@ -151,9 +156,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getDriverOrders($driverID)
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getDriverOrders(EmployeeAccessRequest $request, $driverID)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $driver = Driver::where('id', $driverID)
             ->forCompanyId($CompanyId)
             ->first();
@@ -172,9 +178,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getDriverSummary($driverID)
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getDriverSummary(EmployeeAccessRequest $request, $driverID)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $driverID = Driver::where('id', $driverID)->value('id');
         return response()->json([
             'Assign' => Order::where('driver_id', $driverID)->forCompanyId($CompanyId)->orderStatus(3)->count(),
@@ -185,9 +192,10 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function toggleAvailability($driverID)
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function toggleAvailability(EmployeeAccessRequest $request, $driverID)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $driver = Driver::forCompanyId($CompanyId)
             ->findOrFail($driverID);
 
@@ -199,16 +207,17 @@ class DeliveryCompanyController extends BaseController
 
 
     public function getStuckOrders()
-    {
+    { //*
         return  OrderResource::collection(Order::orderStatus(3)
             ->where('updated_at', '<', now()->subHours(12))
             ->get());
     }
 
 
-    public function getEmployees()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
+    public function getEmployees(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $employees = Employee::forCompanyId($CompanyId)->paginate(25);
 
         if ($employees->isEmpty()) {
@@ -219,26 +228,11 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getEmployeebyName(EmployeeNameRequest $request)
-    {
-
+    public function getEmployee(EmployeeAccessRequest $request, $employeeId)
+    { //*
         try {
-            $data = $request->validated();
-            $CompanyId = Auth::user()->employee->delivery_company_id;
-            $employee = Employee::forCompanyId($CompanyId)->whereHas('user', fn($q) => $q->where('name', $data['name']))->firstOrFail();
-            return new EmpolyeeResource($employee);
-        } catch (ModelNotFoundException) {
-            Log::error("employee not found with name {$data['name']} for company {$CompanyId}");
-
-            return $this->errorResponse('this employee is not found', null, 404);
-        }
-    }
-
-
-    public function getEmployee($employeeId)
-    {
-        try {
-            $CompanyId = Auth::user()->employee->delivery_company_id;
+            $employeeId = $request->getEmployeeId();
+            $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
             $employee = Employee::id($employeeId)->forCompanyId($CompanyId)->firstOrFail();
 
             return new EmpolyeeResource($employee);

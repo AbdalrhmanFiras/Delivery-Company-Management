@@ -9,8 +9,11 @@ use App\Models\Merchant;
 use App\Models\OrderLog;
 use App\Models\Warehouse;
 use App\Enums\OrderStatus;
+use App\Http\Requests\AdminOrderAccessRequest;
+use App\Http\Requests\AdminSupportAccessRequest;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use PhpParser\Node\Expr\Empty_;
 use App\Traits\LogsOrderChanges;
 use Illuminate\Http\JsonResponse;
 use PhpParser\Node\Stmt\TryCatch;
@@ -21,7 +24,9 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\OrderResource;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Requests\MerchantAccessRequest;
 use App\Http\Requests\AssignWarehouseRequest;
+use App\Http\Requests\ShowAccessRequest;
 use App\Http\Requests\ValidateWarehouseRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
@@ -29,9 +34,9 @@ class OrderController extends BaseController
 {
     use LogsOrderChanges;
     public function store(StoreOrderRequest $request)
-    { //! merchant , Superadmin
+    { //*
+        $merchantId = $request->getMerchantId();
         $data =  $request->validated();
-        $merchantId = Auth::user()->merchant->id;
         try {
             $customer = Customer::where('phone', $data['customer_phone'])->first();
             if ($customer) {
@@ -72,8 +77,8 @@ class OrderController extends BaseController
 
 
     public function update(UpdateOrderRequest $request, $orderId)
-    { //! merchant , Supportadmin
-        $merchantId = Auth::user()->merchant->id;
+    { //*
+        $merchantId = $request->getMerchantId();
         $data = $request->validated();
         try {
             $order = Order::id($orderId)->merchantId($merchantId)->orderStatus(1)->firstOrFail();
@@ -103,9 +108,9 @@ class OrderController extends BaseController
     }
 
 
-    public function destroy($orderId)
-    { //! merchant ,  admin
-        $merchantId = Auth::user()->merchant->id;
+    public function destroy(MerchantAccessRequest $request, $orderId)
+    { //*
+        $merchantId = $request->getMerchantId();
         try {
             $order = Order::id($orderId)
                 ->merchantId($merchantId)
@@ -125,20 +130,22 @@ class OrderController extends BaseController
     }
 
 
-    public function getAllOrder()
-    { //! merchant,admin
-        $merchantId = Auth::user()->merchant->id;
-
+    public function getAllOrder(AdminOrderAccessRequest $request)
+    { //*
+        $merchantId = $request->getMerchantId();
         Log::info("merchant {$merchantId} get All his orders");
         $orders = Order::merchantId($merchantId)->latest()->paginate(20);
-        return $this->successResponse('', [OrderResource::collection($orders)]);
+        if (empty($orders->count())) {
+            return $this->errorResponse('there is no orders', null, 404);
+        }
+        return $this->successResponse('Orders', [OrderResource::collection($orders)]);
     }
 
 
-    public function getAllCancelOrder()
-    { //! merchant,admin
-        // $data = $request->validated();
-        $merchantId = Auth::user()->merchant->id;
+    public function getAllCancelOrder(AdminSupportAccessRequest $request)
+    { //*
+
+        $merchantId = $request->getMerchantId();
         $warehouse = Warehouse::merchantId($merchantId)->value('name');
         $orders = Order::orderStatus(6)
             ->merchantId($merchantId)
@@ -152,9 +159,9 @@ class OrderController extends BaseController
     }
 
 
-    public function getSummary($warehouseId)
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getSummary(MerchantAccessRequest $request, $warehouseId)
+    { //*
+        $merchantId = $request->getMerchantId();
         $warehouse = Warehouse::merchantId($merchantId)->where('id', $warehouseId)->value('name');
         $totalOrders = Order::merchantId($merchantId)
             ->warehouseId($warehouseId)
@@ -177,9 +184,9 @@ class OrderController extends BaseController
             'cancelled_orders' => $cancelledOrders,
         ]);
     }
-    public function getSummaryAll()
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getSummaryAll(MerchantAccessRequest $request)
+    { //*
+        $merchantId = $request->getMerchantId();
         $totalOrders = Order::merchantId($merchantId)
             ->count();
 
@@ -200,9 +207,9 @@ class OrderController extends BaseController
     }
 
 
-    public function getCancelOrder($orderId)
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getCancelOrder(MerchantAccessRequest $request, $orderId)
+    { //*
+        $merchantId = $request->getMerchantId();
 
         try {
             $order = Order::id($orderId)
@@ -231,9 +238,9 @@ class OrderController extends BaseController
         }
     }
 
-    public function getAllDelivered()
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getAllDelivered(MerchantAccessRequest $request)
+    { //*
+        $merchantId = $request->getMerchantId();
         $orders = Order::merchantId($merchantId)->orderStatus(5)->latest()->paginate(20);
         if ($orders->isEmpty()) {
             return $this->errorResponse('There is no deliverd Orders yet.', null, 404);
@@ -243,9 +250,9 @@ class OrderController extends BaseController
     }
 
 
-    public function getDeliveredWarehouse($warehouseId)
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getDeliveredWarehouse(MerchantAccessRequest $request, $warehouseId)
+    { //*
+        $merchantId = $request->getMerchantId();
         $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
         $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(5)->latest()->paginate(20);
         if ($orders->isEmpty()) {
@@ -258,9 +265,9 @@ class OrderController extends BaseController
     }
 
 
-    public function getCancelledWarehouse($warehouseId)
-    {
-        $merchantId = Auth::user()->merchant->id;
+    public function getCancelledWarehouse(MerchantAccessRequest $request, $warehouseId)
+    { //*
+        $merchantId = $request->getMerchantId();
         $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
         $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(6)->latest()->paginate(20);
         if ($orders->isEmpty()) {
@@ -273,32 +280,23 @@ class OrderController extends BaseController
     }
 
 
-
-    public function getlatestOrders()
-    { //! merchant , admin
-        $merchantId = Auth::user()->merchant->id;
+    public function getlatestOrders(MerchantAccessRequest $request)
+    { //*
+        $merchantId = $request->getMerchantId();
         Log::info("merchant {$merchantId} get latest orders.");
-        return OrderResource::collection(
-            Order::merchantId($merchantId)->paginate(20)
-        );
+        $orders = Order::merchantId($merchantId)->latest()->paginate(20);
+        if (empty($orders->count())) {
+            return $this->errorResponse('there is no latest orders', null, 404);
+        }
+
+        return $this->successResponse('orders', [OrderResource::collection($orders)]);
     }
 
-    // check it later 
-    public function show($orderId)
-    {
+    public function show(ShowAccessRequest $request, $orderId)
+    { //*
         try {
-            $merchantId = $this->getAuthorizedMerchantIdAndLogAccess('view order', $orderId);
-
-
-            $query = Order::id($orderId);
-
-            if ($merchantId) {
-                $query->merchantId($merchantId);
-            }
-
-            $order = $query->firstOrFail();
-
-
+            $merchantId = $request->getMerchantId();
+            $order = Order::id($orderId)->firstOrFail();
             return $this->successResponse('Order details.', new OrderResource($order));
         } catch (ModelNotFoundException) {
             Log::warning("Order not found", [
@@ -312,31 +310,5 @@ class OrderController extends BaseController
             ]);
             return $this->errorResponse('Unexpected error occurred.');
         }
-    }
-
-
-
-    protected function getAuthorizedMerchantIdAndLogAccess($action, $resourceId = null)
-    {
-        $user = Auth::user();
-        $merchantId = $user->merchant->id ?? null;
-
-        if ($merchantId) {
-            Log::info("Merchant (user_id: {$user->id}, merchant_id: {$merchantId}) is attempting to {$action}");
-            return $merchantId;
-        }
-
-        if ($user->hasRole('admin')) {
-            Log::info("Admin (user_id: {$user->id}) is attempting to {$action}");
-            return null;
-        }
-
-        if ($user->hasRole('supportadmin')) {
-            Log::info("Support Admin (user_id: {$user->id}) is attempting to {$action}");
-            return null;
-        }
-
-        Log::warning("Unauthorized user (user_id: {$user->id}) tried to {$action}");
-        throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Unauthorized.');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 
-class AssignDriverRequest extends FormRequest
+class EmployeeAccessRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,16 +22,13 @@ class AssignDriverRequest extends FormRequest
      */
     public function rules(): array
     {
-
         $user = Auth::user();
         if ($user->hasRole('super_admin_dc')) {
             return [
                 'employee_id' => 'required|exists:employees,id',
             ];
         }
-        return [
-            'driver_id' => 'required|uuid|exists:drivers,id'
-        ];
+        return [];
     }
 
     public function getEmployeeId(): string
@@ -42,7 +39,7 @@ class AssignDriverRequest extends FormRequest
             $EmployeeId = $this->input('employee_id');
             if (!$EmployeeId) {
                 abort(response()->json([
-                    'message' => 'Employee ID is required for Super Admin Dc.'
+                    'message' => 'Employee ID is required for Super Admin DC.'
                 ], 422));
             }
             return $EmployeeId;

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Driver;
+use App\Models\Employee;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Traits\LogsOrderChanges;
@@ -15,20 +16,17 @@ use App\Http\Resources\OrderResource;
 use App\Models\DeliveryCompanyReceipts;
 use App\Http\Requests\AssignDriverRequest;
 use App\Http\Requests\OrderFiltersRequest;
+use App\Http\Requests\EmployeeAccessRequest;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeliveryCompanyOrderController extends BaseController
 { //test role premission 
     use LogsOrderChanges;
 
-    public function __construct()
-    {
-        $this->middleware(['auth:api', 'employee.delivery']);
-    } //auth:jwt // employee role and premission 
 
 
     public function receiveOrder(Request $request, $orderId)
-    {
+    { //*
         $exists = DeliveryCompanyReceipts::orderId($orderId)->exists();
         if ($exists) {
             return response()->json('This order Already been received.', 401);
@@ -53,9 +51,10 @@ class DeliveryCompanyOrderController extends BaseController
         }
     }
 
-    public function getLateOrders($driverId)
-    {
-        $companyId = Auth::user()->employee->delivery_company_id;
+    public function getLateOrders(EmployeeAccessRequest $request, $driverId)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $lateOrdersCount = Order::where('driver_id', $driverId)
             ->forCompanyId($companyId)
             ->where('status', OrderStatus::Delivered->value)
@@ -72,10 +71,11 @@ class DeliveryCompanyOrderController extends BaseController
 
 
     public function assignDriver(AssignDriverRequest $request, $orderId)
-    {
-        $data = $request->validated();
+    { //*
         try {
-            $companyId = Auth::user()->employee->delivery_company_id;
+            $data = $request->validated();
+            $employeeId = $request->getEmployeeId();
+            $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
             $order = Order::id($orderId)
                 ->orderStatus(2)
                 ->forCompanyId($companyId)
@@ -95,10 +95,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function autoAssignDriver($orderId)
-    {
+    public function autoAssignDriver(EmployeeAccessRequest $request, $orderId)
+    { //*
         try {
-            $companyId = Auth::user()->employee->delivery_company_id;
+            $employeeId = $request->getEmployeeId();
+            $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
             $order = Order::id($orderId)
                 ->forCompanyId($companyId)
                 ->orderStatus(2)
@@ -118,11 +119,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getOrder($orderId)
-    {
+    public function getOrder(EmployeeAccessRequest $request, $orderId)
+    { //*
         try {
-            $companyId = Auth::user()->employee->delivery_company_id;
-
+            $employeeId = $request->getEmployeeId();
+            $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
             $order = Order::id($orderId)
                 ->forCompanyId($companyId)
                 ->orderStatus(2)
@@ -136,11 +137,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getAllOrder()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-
-        $orders = Order::forCompanyId($CompanyId)
+    public function getAllOrder(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::forCompanyId($companyId)
             ->orderStatus(2)->orderByDesc('id')
             ->cursorPaginate(25);
 
@@ -152,10 +153,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getLatestOrder()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::forCompanyId($CompanyId)
+    public function getLatestOrder(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::forCompanyId($companyId)
             ->orderStatus(2)
             ->latest()->cursorPaginate(20);
 
@@ -167,10 +169,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getOrderAssign()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::forCompanyId($CompanyId)
+    public function getOrderAssign(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::forCompanyId($companyId)
             ->orderStatus(3)->orderBy('id')
             ->cursorPaginate(20);
         return response()->json([
@@ -181,10 +184,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getOutDelivery()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::forCompanyId($CompanyId)
+    public function getOutDelivery(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::forCompanyId($companyId)
             ->orderStatus(4)
             ->get();
 
@@ -192,10 +196,11 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getDelivered()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-        $orders = Order::forCompanyId($CompanyId)
+    public function getDelivered(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::forCompanyId($companyId)
             ->orderStatus(5)
             ->get();
 
@@ -204,7 +209,7 @@ class DeliveryCompanyOrderController extends BaseController
 
 
     public function filterOrders(OrderFiltersRequest $request)
-    {
+    { //*
         $data = $request->validated();
         $CompanyId = Auth::user()->employee->delivery_company_id;
         $filters = [
@@ -218,10 +223,12 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function cancelOrder(Request $request, $orderId)
-    {
+    public function cancelOrder(EmployeeAccessRequest $request, $orderId)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
         $order = Order::id($orderId)
-            ->forCompanyId(Auth::user()->employee->delivery_company_id)
+            ->forCompanyId($companyId)
             ->firstOrFail();
 
         $order->status = OrderStatus::Cancelled->value;
@@ -231,22 +238,22 @@ class DeliveryCompanyOrderController extends BaseController
     }
 
 
-    public function getSummary()
-    {
-        $CompanyId = Auth::user()->employee->delivery_company_id;
-
+    public function getSummary(EmployeeAccessRequest $request)
+    { //*
+        $employeeId = $request->getEmployeeId();
+        $companyId = Employee::findOrFail($employeeId)->delivery_company_id;
         return response()->json([
-            'total_orders' => Order::forCompanyId($CompanyId)->count(),
-            'assigned' => Order::forCompanyId($CompanyId)->orderStatus(3)->count(),
-            'out_for_delivery' => Order::forCompanyId($CompanyId)->orderStatus(4)->count(),
-            'delivered' => Order::forCompanyId($CompanyId)->orderStatus(5)->count(),
-            'cancelled' => Order::forCompanyId($CompanyId)->orderStatus(6)->count(),
+            'total_orders' => Order::forCompanyId($companyId)->count(),
+            'assigned' => Order::forCompanyId($companyId)->orderStatus(3)->count(),
+            'out_for_delivery' => Order::forCompanyId($companyId)->orderStatus(4)->count(),
+            'delivered' => Order::forCompanyId($companyId)->orderStatus(5)->count(),
+            'cancelled' => Order::forCompanyId($companyId)->orderStatus(6)->count(),
         ]);
     }
 
 
     public function searchByTrackNumber(Request $request)
-    {
+    { //*
         $data = $request->validate([
             'tracking_number' => 'required|string'
         ]);

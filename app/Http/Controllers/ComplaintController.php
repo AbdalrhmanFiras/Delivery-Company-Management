@@ -19,6 +19,17 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class ComplaintController extends BaseController
 {
 
+    public function __construct()
+    {
+        $this->middleware(['auth:api', 'role:customer']);
+        $this->middleware('permission:get-customer-complaint')->only('index');
+        $this->middleware('permission:get-customer-complaints')->only('show');
+        $this->middleware('permission:create-complaint')->only('store');
+        $this->middleware('permission:update-complaint')->only('update');
+        $this->middleware('permission:delete-complaint')->only('destroy');
+    }
+
+
     public function store(ComplaintStoreRequest $request)
     {
         $data = $request->validated();

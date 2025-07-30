@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreOrderRequest extends FormRequest
+class MerchantAccessRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,26 +24,11 @@ class StoreOrderRequest extends FormRequest
     {
         $user = Auth::user();
         if ($user->hasRole('super_admin')) {
-            return [
-                'customer_name' => 'required|string',
-                'customer_phone' => 'required|string|min:11',
-                'customer_address' => 'required|string',
-                'total_price' => 'required|numeric|min:0',
-                'warehouse_id' => 'required|exists:warehouses,id',
-                'merchant_id' => 'required|exists:merchants,id'
-            ];
+            return ['merchant_id' => 'required|exists:merchants,id'];
         }
-        return [
-            'customer_name' => 'required|string',
-            'customer_phone' => 'required|string|min:11',
-            'customer_address' => 'required|string',
-            'total_price' => 'required|numeric|min:0',
-            'warehouse_id' => 'required|exists:warehouses,id'
 
-        ];
+        return [];
     }
-
-
 
 
     public function getMerchantId(): string
@@ -63,7 +48,6 @@ class StoreOrderRequest extends FormRequest
             }
             return $merchantId;
         }
-
         abort(response()->json([
             'message' => 'Unauthorized access.'
         ], 403));

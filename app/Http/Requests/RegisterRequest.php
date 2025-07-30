@@ -29,7 +29,7 @@ class RegisterRequest extends FormRequest
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'required|string|max:20',
             'address' => 'required|string|max:500',
-            'user_type' => 'required|in:customer,driver,merchant,employee',
+            'user_type' => 'required|in:customer,driver,merchant,employee,super_admin,admin_order,admin_support,admin_check,admin_manager,super_admin_dc'
 
         ];
 

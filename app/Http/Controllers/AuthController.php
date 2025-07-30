@@ -33,12 +33,17 @@ class AuthController extends BaseController
             $user->assignRole($data['user_type']);
             $model = $this->createModel($request, $user);
 
+            $userType = $user->user_type;
+            $hasRelation = in_array($userType, ['merchant', 'driver', 'employee']);
 
+            $userResource = $hasRelation
+                ? new UserResource($user->load($userType))
+                : new UserResource($user);
             DB::commit();
             return $this->successResponse(
                 'Registration successful',
                 [
-                    'user' => new UserResource($user->load($data['user_type'])),
+                    'user' => $userResource
                 ],
                 201
             );
@@ -68,11 +73,16 @@ class AuthController extends BaseController
         $user = User::where('email', $data['email'])->first();
         $status = $this->getUsertype($user);
 
+        $userType = $user->user_type;
+        $hasRelation = in_array($userType, ['merchant', 'driver', 'employee']);
 
+        $userResource = $hasRelation
+            ? new UserResource($user->load($userType))
+            : new UserResource($user);
         return $this->successResponse(
             'Login successful',
             [
-                'user' => new UserResource($user->load($user->user_type)),
+                'user' =>  $userResource,
                 'token' => $token
             ]
         );
@@ -119,7 +129,7 @@ class AuthController extends BaseController
         return match ($user_type) {
             'merchant' => 'inactive',
             'driver' => 'inactive',
-            'employee' => 'active',
+            'employee', 'admin_order', 'admin_manager', 'admin_check', 'admin_support', 'super_admin', 'super_admin_dc' => 'active',
             default => 'active'
         };
     }
@@ -131,7 +141,7 @@ class AuthController extends BaseController
             'driver' => $this->createDriver($user, $request),
             'merchant' => $this->createMerchant($user, $request),
             'employee' => $this->createEmployee($user, $request),
-
+            'admin_order', 'admin_manager', 'admin_check', 'admin_support', 'super_admin', 'super_admin_dc' => null,
             default => null,
         };
     }
