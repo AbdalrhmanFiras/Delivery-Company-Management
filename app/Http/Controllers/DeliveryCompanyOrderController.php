@@ -25,7 +25,7 @@ class DeliveryCompanyOrderController extends BaseController
 
 
 
-    public function receiveOrder(Request $request, $orderId)
+    public function receiveOrder($orderId)
     { //*
         $exists = DeliveryCompanyReceipts::orderId($orderId)->exists();
         if ($exists) {
@@ -33,7 +33,7 @@ class DeliveryCompanyOrderController extends BaseController
         }
         try {
             DB::beginTransaction();
-            $order = Order::id($orderId)->orderStatus(1)->firstOrFail();
+            $order = Order::id($orderId)->orderStatus(2)->firstOrFail();
             $orderReceipts = DeliveryCompanyReceipts::create([
                 'order_id' => $order->id,
                 'received_by' => $order->merchant ? $order->merchant->user_id : null,

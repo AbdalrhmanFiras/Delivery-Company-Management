@@ -36,7 +36,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'get-warehouse-delivered',
         ];
         foreach ($merchantPermissions as $pre) {
-            Permission::firstOrCreate(['name' => $pre]);
+            Permission::firstOrCreate(['name' => $pre, 'guard_name' => 'api']);
         }
         $merchant = Role::firstOrCreate(
             ['name' => 'merchant', 'guard_name' => 'api']
@@ -96,7 +96,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'summary-rating',
         ];
         foreach ($driverPermissions as $pre) {
-            Permission::firstOrCreate(['name' => $pre]);
+            Permission::firstOrCreate(['name' => $pre, 'guard_name' => 'api']);
         }
         $driver = Role::firstOrCreate(['name' => 'driver', 'guard_name' => 'api']);
         $driver->givePermissionTo($driverPermissions);
@@ -192,7 +192,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'get-merchant-assign-orders',
         ];
         foreach ($user1Permissions as $per) {
-            Permission::firstOrCreate(['name' => $per]);
+            Permission::firstOrCreate([
+                'name' => $per,
+                'guard_name' => 'api'
+            ]);
         }
         $user1 = Role::firstOrCreate(['name' => 'admin_order', 'guard_name' => 'api']);
         $user1->givePermissionTo($user1Permissions);
@@ -212,7 +215,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'get-complaints',
         ];
         foreach ($user2Permissions as $per) {
-            Permission::firstOrCreate(['name' => $per]);
+            Permission::firstOrCreate([
+                'name' => $per,
+                'guard_name' => 'api'
+            ]);
         }
         $user2 = Role::firstOrCreate(['name' => 'admin_support', 'guard_name' => 'api']);
         $user2->givePermissionTo($user2Permissions);
@@ -226,7 +232,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'get-merchant-logs',
         ];
         foreach ($user3Permissions as $per) {
-            Permission::firstOrCreate(['name' => $per]);
+            Permission::firstOrCreate([
+                'name' => $per,
+                'guard_name' => 'api'
+            ]);
         }
         $user3 = Role::firstOrCreate(['name' => 'admin_check', 'guard_name' => 'api']);
         $user3->givePermissionTo($user3Permissions);
@@ -245,7 +254,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'get-summary-delivery-companies',
         ];
         foreach ($user4Permissions as $per) {
-            Permission::firstOrCreate(['name' => $per]);
+            Permission::firstOrCreate([
+                'name' => $per,
+                'guard_name' => 'api'
+            ]);
         }
         $user4 = Role::firstOrCreate(['name' => 'admin_manager', 'guard_name' => 'api']);
         $user4->givePermissionTo($user4Permissions);

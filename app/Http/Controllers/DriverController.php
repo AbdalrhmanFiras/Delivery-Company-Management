@@ -55,7 +55,7 @@ class DriverController extends BaseController
     {
         $driver = Auth::user()->driver;
 
-        $exists = DriverReceipts::orderId($orderId)->forCompanyId($driver->delivery_company_id)
+        $exists = DriverReceipts::where('order_id', $orderId)->where('delivery_company_id', $driver->delivery_company_id)
             ->where('driver_id', $driver->id)->exists();
         if ($exists) {
             return response()->json('This order Already been received.', 401);
@@ -68,7 +68,7 @@ class DriverController extends BaseController
                 'order_id' => $order->id,
                 'driver_id' => $driver->id,
                 'delivery_company_id' => $driver->delivery_company_id,
-                'received_by' => $driver->id,
+                'received_by' => Auth::id(),
                 'received_at' => now(),
             ]);
             DB::commit();

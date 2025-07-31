@@ -166,7 +166,7 @@ class AuthController extends BaseController
             'location' => $request->loaction,
             'user_id' => $user->id,
             'address' => $request->address,
-            'hire_date' => $request->location,
+            'hire_date' => $request->hire_date,
             'warehouse_id' => $request->warehouse_id,
             'delivery_company_id' => $request->delivery_company_id
 

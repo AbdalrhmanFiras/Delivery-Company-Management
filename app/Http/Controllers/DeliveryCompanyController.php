@@ -111,27 +111,27 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function UpdateDriver(UpdateDriverRequest $request, $driverID)
-    { //*
-        $employeeId = $request->getEmployeeId();
-        $data = $request->validated();
-        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
-        try {
-            $driver = Driver::forCompanyId($CompanyId)
-                ->where('status', 'Active')
-                ->where('id', $driverID)
-                ->firstOrFail();
+    // public function UpdateDriver(UpdateDriverRequest $request, $driverID)
+    // { //*
+    //     $employeeId = $request->getEmployeeId();
+    //     $data = $request->validated();
+    //     $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
+    //     try {
+    //         $driver = Driver::forCompanyId($CompanyId)
+    //             ->where('status', 'Active')
+    //             ->where('id', $driverID)
+    //             ->firstOrFail();
 
-            $driver->update($data);
-            return $this->successResponse('Driver updated Succssfully.', new DriverResource($driver));
-        } catch (ModelNotFoundException $e) {
-            Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
-            return $this->errorResponse('Driver not found.', null, 404);
-        } catch (\Exception $e) {
-            Log::error("Failed to update driver ID {$driverID}: " . $e->getMessage());
-            return $this->errorResponse('Failed to update driver.', null, 500);
-        }
-    }
+    //         $driver->update($data);
+    //         return $this->successResponse('Driver updated Succssfully.', new DriverResource($driver));
+    //     } catch (ModelNotFoundException) {
+    //         Log::error("Driver not found with ID {$driverID} for company {$CompanyId}");
+    //         return $this->errorResponse('Driver not found.', null, 404);
+    //     } catch (\Exception $e) {
+    //         Log::error("Failed to update driver ID {$driverID}: " . $e->getMessage());
+    //         return $this->errorResponse('Failed to update driver.', null, 500);
+    //     }
+    // }
 
 
     public function destroyDriver(EmployeeAccessRequest $request, $driverID)
@@ -206,11 +206,15 @@ class DeliveryCompanyController extends BaseController
     }
 
 
-    public function getStuckOrders()
+    public function getStuckOrders(EmployeeAccessRequest $request)
     { //*
-        return  OrderResource::collection(Order::orderStatus(3)
-            ->where('updated_at', '<', now()->subHours(12))
-            ->get());
+        $employeeId = $request->getEmployeeId();
+        $CompanyId = Employee::findOrFail($employeeId)->delivery_company_id;
+        $orders = Order::OrderStatus(3)->forCompanyId($CompanyId)->where('updated_at', '<', now()->subHours(12))->get();
+        if ($orders->isEmpty()) {
+            return $this->errorResponse('there is no stuck orders', null, 404);
+        }
+        return $this->successResponse('orders', OrderResource::collection($orders));
     }
 
 

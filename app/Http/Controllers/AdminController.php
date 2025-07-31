@@ -32,11 +32,13 @@ use App\Http\Requests\UpdateDeliveryCompanyWarehouseRequest;
 
 class AdminController extends BaseController
 {
-    // for admin that can controller the order 
     use LogsOrderChanges;
 
     public function getAllOrder()
     {
+        if (!Auth::user()->hasAnyRole(['admin_support', 'super_admin'])) {
+            abort(403, 'Forbidden');
+        }
         $orders = Order::orderStatus(1)->whereNotNull('warehouse_id')->cursorPaginate(20);
         if (empty($orders->items())) {
             Log::info('No orders found at warehouse status.');
@@ -131,7 +133,7 @@ class AdminController extends BaseController
             return $this->errorResponse('Delivery company governorate does not match order governorate.', null, 400);
         } catch (ModelNotFoundException) {
             Log::error('Order not found or invalid state', ['order_id' => $orderId]);
-            return $this->errorResponse('Order not found or not in a valid state.', 404);
+            return $this->errorResponse('Order not found or Already assigned to delivery company.',  null, 404);
         } catch (\Exception $e) {
             Log::error('Unexpected error in AssignOrderToDeliveryCompany', ['exception' => $e]);
             return $this->errorResponse('Unexpected error occurred.', ['error' => $e->getMessage()], 500);
@@ -164,7 +166,7 @@ class AdminController extends BaseController
 
 
     public function getOrder($orderId)
-    { // fix it later
+    {
         try {
             $order = Order::id($orderId)->firstOrFail();
             return $this->successResponse('Order details.', new OrderResource($order));
@@ -226,6 +228,8 @@ class AdminController extends BaseController
 
     public function replyToComplaint(ReplieComplaintRequest $request, $complaintId)
     {
+        $user = Auth::user();
+        $type = $user->user_type;
         try {
             $data = $request->validated();
             $complaint = Complaint::id($complaintId)
@@ -234,8 +238,8 @@ class AdminController extends BaseController
 
             $reply = ComplaintReply::create([
                 'complaint_id' => $complaint->id,
-                // 'replier_id' => $admin->id,
-                // 'replier_type' => get_class($admin),
+                'replier_id' => $user->id,
+                'replier_type' => $type,
                 'message' => $data['message'],
             ]);
 
@@ -270,10 +274,8 @@ class AdminController extends BaseController
             ]);
             return $this->successResponse('updated Successfully', null, 202);
         } catch (ModelNotFoundException) {
-            Log::warning('Complaint not found when closing', [
-                'admin_id' => Auth::user()->admin->id
-            ]);
-            return $this->errorResponse('Complaint not found', null, 404);
+            Log::warning('Complaint not found when closing');
+            return $this->errorResponse('Complaint not found or already closed', null, 404);
         }
     }
 
@@ -317,8 +319,8 @@ class AdminController extends BaseController
 
 
     public function update(UpdateOrderRequest $request, $orderId)
-    { //! merchant , Supportadmin
-        $merchantId = Auth::user()->merchant->id;
+    {
+        $merchantId = $request->getMerchantId();
         $data = $request->validated();
         try {
             $order = Order::id($orderId)->merchantId($merchantId)->orderStatus(1)->firstOrFail();
@@ -421,9 +423,6 @@ class AdminController extends BaseController
 
     public function getOrderLogs($orderId)
     {
-        if (!Order::id($orderId)->exists()) {
-            return $this->errorResponse('This order does not exist.', null, 404);
-        }
 
         $orderLogs = OrderLog::where('order_id', $orderId)
             ->orderBy('created_at', 'asc')
@@ -479,7 +478,7 @@ class AdminController extends BaseController
             return $this->successResponse('Update Delivery Company Successfully', $DeliveryCompany);
         } catch (ModelNotFoundException) {
             Log::warning('delivery company not found.');
-            return $this->errorResponse('Delivery company not found.', 404);
+            return $this->errorResponse('Delivery company not found.', null, 404);
         } catch (\Exception $e) {
             Log::error('Erorr updated delivery company with Id:' . $DeliveryCompanyId);
             return $this->errorResponse('Unexpected error.', $e->getMessage(), 500);

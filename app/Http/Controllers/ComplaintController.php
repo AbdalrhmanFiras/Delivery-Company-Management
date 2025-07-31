@@ -21,9 +21,9 @@ class ComplaintController extends BaseController
 
     public function __construct()
     {
-        $this->middleware(['auth:api', 'role:customer']);
-        $this->middleware('permission:get-customer-complaint')->only('index');
+        $this->middleware(['auth:customer', 'role:customer']);
         $this->middleware('permission:get-customer-complaints')->only('show');
+        $this->middleware('permission:get-customer-complaint')->only('index');
         $this->middleware('permission:create-complaint')->only('store');
         $this->middleware('permission:update-complaint')->only('update');
         $this->middleware('permission:delete-complaint')->only('destroy');

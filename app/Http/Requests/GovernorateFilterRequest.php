@@ -25,7 +25,7 @@ class GovernorateFilterRequest extends FormRequest
     {
         return [
             'governorate' => [
-                'sometimes',
+                'required',
                 'nullable',
                 Rule::in(array_column(Governorate::cases(), 'value')),
             ],

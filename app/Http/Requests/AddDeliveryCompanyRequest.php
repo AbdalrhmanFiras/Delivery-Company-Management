@@ -31,7 +31,6 @@ class AddDeliveryCompanyRequest extends FormRequest
                 'nullable',
                 Rule::in(array_column(Governorate::cases(), 'value'))
             ],
-            'warehouse_id' => 'nullable|exists:warehouses,id'
         ];
     }
 }

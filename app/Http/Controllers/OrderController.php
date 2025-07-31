@@ -152,7 +152,7 @@ class OrderController extends BaseController
             ->latest()
             ->paginate(20);
         if ($orders->isEmpty()) {
-            return $this->errorResponse('There is no Cancel Orders in ', null, 404);
+            return $this->errorResponse('There is no Cancel Orders', null, 404);
         }
         Log::info("merchant {$merchantId} get All his Cancel orders");
         return $this->successResponse("Orders Cancel is {$orders->count()}", [OrderResource::collection($orders)]);
@@ -162,6 +162,9 @@ class OrderController extends BaseController
     public function getSummary(MerchantAccessRequest $request, $warehouseId)
     { //*
         $merchantId = $request->getMerchantId();
+        if (!Warehouse::id($warehouseId)->exists()) {
+            return $this->errorResponse('there is no warehouse like this', null, 404);
+        }
         $warehouse = Warehouse::merchantId($merchantId)->where('id', $warehouseId)->value('name');
         $totalOrders = Order::merchantId($merchantId)
             ->warehouseId($warehouseId)
@@ -253,10 +256,13 @@ class OrderController extends BaseController
     public function getDeliveredWarehouse(MerchantAccessRequest $request, $warehouseId)
     { //*
         $merchantId = $request->getMerchantId();
+        if (!Warehouse::id($warehouseId)->exists()) {
+            return $this->errorResponse('there is no warehouse like this', null, 404);
+        }
         $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
         $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(5)->latest()->paginate(20);
         if ($orders->isEmpty()) {
-            return $this->errorResponse('There is no deliverd Orders for ' . $warehouse, null, 404);
+            return $this->errorResponse('There is no deliverd Orders from ' . $warehouse, null, 404);
         }
         Log::info("merchant {$merchantId} get All his Delivered orders from {$warehouse}.");
         return $this->successResponse("Delivered orders for {$warehouse}.", [
@@ -268,10 +274,14 @@ class OrderController extends BaseController
     public function getCancelledWarehouse(MerchantAccessRequest $request, $warehouseId)
     { //*
         $merchantId = $request->getMerchantId();
+        if (!Warehouse::id($warehouseId)->exists()) {
+            return $this->errorResponse('there is no warehouse like this', null, 404);
+        }
         $warehouse = Warehouse::id($warehouseId)->merchantId($merchantId)->value('name');
+
         $orders = Order::merchantId($merchantId)->warehouseId($warehouseId)->orderStatus(6)->latest()->paginate(20);
         if ($orders->isEmpty()) {
-            return $this->errorResponse('There is no cancel Orders for ' . $warehouse, null, 404);
+            return $this->errorResponse('There is no cancel Orders form ' . $warehouse, null, 404);
         }
         Log::info("merchant {$merchantId} get All his Cancel orders from {$warehouse}.");
         return $this->successResponse("Delivered orders for {$warehouse}.", [

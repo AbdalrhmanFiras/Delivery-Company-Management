@@ -42,9 +42,7 @@ class CustomerController extends BaseController
         }
 
         $customer = Customer::where('phone', $data['phone'])->first();
-        // if (Auth::guard('api')->check()) {
-        //     return $this->successResponse('You are already logged in.');
-        // }
+
 
         if (!$customer) {
             $order = Order::where('customer_phone', $data['phone'])
@@ -71,7 +69,7 @@ class CustomerController extends BaseController
         }
         RateLimiter::hit('otp:' . $data['phone'], 60);
         event(new CustomerOtpLogin($customer));
-        return $this->successResponse('OTP sent to your phone.');
+        return $this->successResponse('you will find the otp in laravel.log');
     }
 
 
@@ -169,8 +167,9 @@ class CustomerController extends BaseController
     }
 
 
-    public function cancelOrder($orderId)
+    public function cancelOrder(Request $request, $orderId)
     {
+        $data = $request->validate(['reason' => 'required|string']);
         $customer = Auth::guard('customer')->user();
         $order = Order::id($orderId)->phone($customer->phone)
             ->where('status', [OrderStatus::AtWarehouse->value])
